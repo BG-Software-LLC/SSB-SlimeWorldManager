@@ -4,12 +4,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class WorldUnloadTask extends BukkitRunnable {
 
-    private static final Map<String, WorldUnloadTask> worldTasks = new HashMap<>();
+    private static final Map<String, WorldUnloadTask> worldTasks = new ConcurrentHashMap<>();
     private static final long UNLOAD_DELAY = 24000;
 
     private final String worldName;
@@ -17,7 +17,6 @@ public final class WorldUnloadTask extends BukkitRunnable {
 
     private WorldUnloadTask(String worldName){
         this.worldName = worldName;
-        worldTasks.put(worldName.toLowerCase(), this);
         runTaskTimer(SSBSlimeWorldManager.plugin, UNLOAD_DELAY, UNLOAD_DELAY);
     }
 
