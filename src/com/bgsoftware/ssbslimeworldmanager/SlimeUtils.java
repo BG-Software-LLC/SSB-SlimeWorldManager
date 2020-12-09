@@ -35,7 +35,7 @@ public final class SlimeUtils {
     public static void unloadAllWorlds(){
         try{
             slimePlugin.getLoader(defaultWorldData.getDataSource()).listWorlds().forEach(worldName -> {
-                if(isIslandsWorld(worldName) && Bukkit.getWorld(worldName) != null)
+                if(isIslandWorldName(worldName) && Bukkit.getWorld(worldName) != null)
                     unloadWorld(worldName);
             });
         }catch (Exception ex){
@@ -127,6 +127,18 @@ public final class SlimeUtils {
 
     public static String getWorldName(UUID islandUUID, World.Environment environment){
         return "island_" + islandUUID + "_" + environment.name().toLowerCase();
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private static boolean isIslandWorldName(String worldName){
+        String[] nameSections = worldName.split("_");
+        try{
+            UUID.fromString(nameSections[0]);
+            World.Environment.valueOf(nameSections[1]);
+            return true;
+        }catch (Exception ex){
+            return false;
+        }
     }
 
     private static WorldData buildDefaultWorldData(){
