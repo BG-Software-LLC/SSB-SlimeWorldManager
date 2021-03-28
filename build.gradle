@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'maven'
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id 'maven-publish'
+}
+
+group 'SSB-SlimeWorldManager'
+version = "1.0.1"
+
+repositories {
+    maven { url 'https://repo.bg-software.com/repository/nms/' }
+    maven { url 'https://repo.bg-software.com/repository/api/' }
+    maven { url 'https://repo.bg-software.com/repository/public-libs/' }
+}
+
+dependencies {
+    compileOnly "org.spigotmc:v1_8_R3-Taco:latest"
+    compileOnly "com.grinderwolf:SlimeWorldManager:latest"
+    compileOnly "com.bgsoftware:SuperiorSkyblockAPI:latest"
+}
+
+processResources {
+    outputs.upToDateWhen {false}
+    eachFile { details ->
+        if (details.name.contentEquals('plugin.yml')) {
+            filter { String line ->
+                line.replace('${project.version}', (String) version)
+            }
+        }
+    }
+}
+
+shadowJar {
+    dependsOn(jar)
+
+    archiveName = rootProject.name + ".jar"
+
+    delete fileTree('./target/') {
+        exclude archiveName
+    }
+
+    destinationDir = file("./target/")
+    from sourceSets.getByName("main").output
+    configurations = [project.configurations.getByName("runtimeClasspath")]
+}
+
+build {
+    dependsOn shadowJar
+}
+
+publish.shouldRunAfter shadowJar
+shadowJar.shouldRunAfter build
