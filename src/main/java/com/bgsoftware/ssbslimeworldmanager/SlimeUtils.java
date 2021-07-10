@@ -89,14 +89,16 @@ public final class SlimeUtils {
     public static void deleteWorld(Island island, World.Environment environment){
         String worldName = getWorldName(island, environment);
 
-        WorldData worldData = ConfigManager.getWorldConfig().getWorlds().get(worldName);
-
         unloadWorld(worldName);
 
-        try {
-            slimePlugin.getLoader(worldData.getDataSource()).deleteWorld(worldName);
-        }catch (Exception ex){
-            ex.printStackTrace();
+        WorldData worldData = ConfigManager.getWorldConfig().getWorlds().get(worldName);
+
+        if(worldData != null) {
+            try {
+                slimePlugin.getLoader(worldData.getDataSource()).deleteWorld(worldName);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
