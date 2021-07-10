@@ -56,6 +56,16 @@ public final class SSBWorldManager {
         }
 
         @Override
+        public boolean isNormalEnabled() {
+            return true;
+        }
+
+        @Override
+        public boolean isNormalUnlocked() {
+            return true;
+        }
+
+        @Override
         public boolean isNetherEnabled() {
             return true;
         }
