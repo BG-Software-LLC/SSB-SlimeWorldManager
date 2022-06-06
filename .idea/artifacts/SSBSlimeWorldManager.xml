@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="SSBSlimeWorldManager">
-    <output-path>$PROJECT_DIR$/../../My Servers/Testing 1.16/plugins</output-path>
-    <root id="archive" name="SSBSlimeWorldManager.jar">
-      <element id="module-output" name="SSBSlimeWorldManager" />
-    </root>
-  </artifact>
-</component>
