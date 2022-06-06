@@ -1,31 +1,78 @@
 plugins {
     id 'java'
-    id 'maven'
-    id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id 'com.github.johnrengelman.shadow' version '7.0.0'
     id 'maven-publish'
 }
 
 group 'SSB-SlimeWorldManager'
 version = "1.0.1"
 
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'com.github.johnrengelman.shadow'
+
+    repositories {
+        maven { url 'https://repo.bg-software.com/repository/nms/' }
+        maven { url 'https://repo.bg-software.com/repository/api/' }
+        maven { url 'https://repo.bg-software.com/repository/common/' }
+        maven { url 'https://repo.bg-software.com/repository/public-libs/' }
+
+        String mavenUsername = System.getenv('mavenUsername') == null ? project.mavenUsername : System.getenv('mavenUsername');
+        String mavenPassword = System.getenv('mavenPassword') == null ? project.mavenPassword : System.getenv('mavenPassword');
+
+        if (mavenUsername != null && mavenPassword != null) {
+            maven {
+                url 'https://repo.bg-software.com/repository/private-libs/'
+                credentials {
+                    username mavenUsername
+                    password mavenPassword
+                }
+            }
+        }
+    }
+
+    dependencies {
+        compileOnly 'com.bgsoftware:SuperiorSkyblockAPI:1.10.2'
+
+        // Spigot jars
+        compileOnly "org.spigotmc:v1_8_R3-Taco:latest"
+    }
+
+    build {
+        dependsOn shadowJar
+    }
+}
+
+subprojects {
+    shadowJar {
+        archiveFileName = "${project.name}.jar"
+        destinationDirectory = file("../archive/")
+    }
+}
+
 repositories {
-    maven { url 'https://repo.bg-software.com/repository/nms/' }
-    maven { url 'https://repo.bg-software.com/repository/api/' }
-    maven { url 'https://repo.bg-software.com/repository/public-libs/' }
+    mavenCentral()
 }
 
 dependencies {
-    compileOnly "org.spigotmc:v1_8_R3-Taco:latest"
-    compileOnly "com.grinderwolf:SlimeWorldManager:latest"
-    compileOnly "com.bgsoftware:SuperiorSkyblockAPI:1.10.0"
+    implementation fileTree("archive")
+}
+
+jar {
+    from {
+        for (File file : new File("archive").listFiles()) {
+            zipTree(file)
+        }
+    }
 }
 
 processResources {
-    outputs.upToDateWhen {false}
+    outputs.upToDateWhen { false }
+    String versionNumber = System.getenv("BUILD_NUMBER") == null ? version : version + "." + System.getenv("BUILD_NUMBER")
     eachFile { details ->
         if (details.name.contentEquals('plugin.yml')) {
             filter { String line ->
-                line.replace('${project.version}', (String) version)
+                line.replace('${project.version}', versionNumber)
             }
         }
     }
@@ -34,7 +81,14 @@ processResources {
 shadowJar {
     dependsOn(jar)
 
-    archiveName = rootProject.name + ".jar"
+    relocate 'com.zaxxer.hikari', 'com.bgsoftware.superiorskyblock.libs.hikari'
+    relocate 'org.bstats', 'com.bgsoftware.superiorskyblock.libs.bstats'
+
+    if (System.getenv("BUILD_NUMBER") == null) {
+        archiveName = rootProject.name + "-" + version + ".jar"
+    } else {
+        archiveName = rootProject.name + "-" + version + "-b" + System.getenv("BUILD_NUMBER") + ".jar"
+    }
 
     delete fileTree('./target/') {
         exclude archiveName
@@ -45,9 +99,22 @@ shadowJar {
     configurations = [project.configurations.getByName("runtimeClasspath")]
 }
 
+task copyAPI(type: Copy) {
+    from './archive/API.jar'
+    into './target/'
+    rename('API.jar', rootProject.name + 'API.jar')
+}
+
+clean {
+    delete file('./archive/')
+}
+
 build {
     dependsOn shadowJar
+    dependsOn copyAPI
+    dependsOn clean
 }
 
 publish.shouldRunAfter shadowJar
 shadowJar.shouldRunAfter build
+build.shouldRunAfter subprojects.build

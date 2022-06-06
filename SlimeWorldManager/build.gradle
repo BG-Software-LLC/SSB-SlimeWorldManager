@@ -1,0 +1,6 @@
+group 'SlimeWorldManager'
+
+dependencies {
+    compileOnly "com.grinderwolf:SlimeWorldManager:latest"
+    compileOnly parent
+}

@@ -8,3 +8,5 @@
  */
 
 rootProject.name = 'SSBSlimeWorldManager'
+include 'SlimeWorldManager'
+
