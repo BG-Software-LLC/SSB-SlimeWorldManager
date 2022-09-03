@@ -71,7 +71,7 @@ public final class SlimeWorldsProvider implements WorldsProvider {
 
     @Override
     public boolean isNormalUnlocked() {
-        return module.getPlugin().getSettings().getWorlds().getNormal().isUnlocked();
+        return isNormalEnabled() && module.getPlugin().getSettings().getWorlds().getNormal().isUnlocked();
     }
 
     @Override
@@ -81,7 +81,7 @@ public final class SlimeWorldsProvider implements WorldsProvider {
 
     @Override
     public boolean isNetherUnlocked() {
-        return module.getPlugin().getSettings().getWorlds().getNether().isUnlocked();
+        return isNetherEnabled() && module.getPlugin().getSettings().getWorlds().getNether().isUnlocked();
     }
 
     @Override
@@ -91,7 +91,7 @@ public final class SlimeWorldsProvider implements WorldsProvider {
 
     @Override
     public boolean isEndUnlocked() {
-        return module.getPlugin().getSettings().getWorlds().getEnd().isUnlocked();
+        return isEndEnabled() && module.getPlugin().getSettings().getWorlds().getEnd().isUnlocked();
     }
 
     public World getSlimeWorldAsBukkit(UUID islandUUID, World.Environment environment) {
