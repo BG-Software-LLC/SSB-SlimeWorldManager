@@ -15,13 +15,18 @@ import com.grinderwolf.swm.plugin.config.WorldsConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
+import java.util.Locale;
+
 public final class SWMAdapter implements ISlimeAdapter {
 
-    private static final SlimePlugin slimePlugin;
-    private static final WorldData defaultWorldData = buildDefaultWorldData();
+    private final SuperiorSkyblock plugin;
+    private final SlimePlugin slimePlugin;
+    private final WorldData defaultWorldData;
 
-    static {
-        slimePlugin = (SlimePlugin) Bukkit.getPluginManager().getPlugin("SlimeWorldManager");
+    public SWMAdapter(SuperiorSkyblock plugin) {
+        this.plugin = plugin;
+        this.slimePlugin = (SlimePlugin) Bukkit.getPluginManager().getPlugin("SlimeWorldManager");
+        this.defaultWorldData = buildDefaultWorldData();
     }
 
     @Override
@@ -94,11 +99,11 @@ public final class SWMAdapter implements ISlimeAdapter {
         }
     }
 
-    private static WorldData buildDefaultWorldData() {
+    private WorldData buildDefaultWorldData() {
         WorldData worldData = new WorldData();
 
         worldData.setDataSource("file");
-        worldData.setDifficulty("normal");
+        worldData.setDifficulty(plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
         worldData.setLoadOnStartup(false);
 
         return worldData;

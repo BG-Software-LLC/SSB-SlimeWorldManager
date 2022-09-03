@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.Listener;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Constructor;
 
 public final class SlimeWorldModule extends PluginModule {
 
@@ -81,9 +82,16 @@ public final class SlimeWorldModule extends PluginModule {
         }
     }
 
-    private static ISlimeAdapter createAdapterInstance(String className) {
+    private ISlimeAdapter createAdapterInstance(String className) {
         try {
-            return (ISlimeAdapter) Class.forName(className).newInstance();
+            Class<?> clazz = Class.forName(className);
+
+            for (Constructor<?> constructor : clazz.getConstructors()) {
+                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].equals(SuperiorSkyblock.class))
+                    return (ISlimeAdapter) constructor.newInstance(this.plugin);
+            }
+
+            return (ISlimeAdapter) clazz.newInstance();
         } catch (Exception error) {
             return null;
         }
