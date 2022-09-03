@@ -3,11 +3,13 @@ package com.bgsoftware.ssbslimeworldmanager.listeners;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
 import com.bgsoftware.superiorskyblock.api.events.IslandDisbandEvent;
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 
 public final class IslandsListener implements Listener {
 
@@ -26,6 +28,19 @@ public final class IslandsListener implements Listener {
                     module.getSlimeAdapter().deleteWorld(event.getIsland(), environment);
             }
         }, 1L);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        SuperiorPlayer superiorPlayer = module.getPlugin().getPlayers().getSuperiorPlayer(event.getPlayer());
+        Island island = superiorPlayer.getIsland();
+        if (island != null) {
+            // We want to load the worlds of the player's island.
+            for (World.Environment environment : World.Environment.values()) {
+                if (isWorldEnabledForIsland(island, environment))
+                    module.getSlimeWorldsProvider().getSlimeWorldAsBukkitAsync(island.getUniqueId(), environment);
+            }
+        }
     }
 
     private static boolean isWorldEnabledForIsland(Island island, World.Environment environment) {

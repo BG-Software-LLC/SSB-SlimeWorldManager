@@ -24,6 +24,8 @@ public final class SlimeWorldModule extends PluginModule {
     private ISlimeAdapter slimeAdapter;
     private SuperiorSkyblock plugin;
 
+    private SlimeWorldsProvider slimeWorldsProvider;
+
     public SlimeWorldModule() {
         super("SlimeWorldIslands", "Ome_R");
     }
@@ -37,10 +39,9 @@ public final class SlimeWorldModule extends PluginModule {
 
         loadAdapter();
 
-        plugin.getProviders().setWorldsProvider(new SlimeWorldsProvider(this));
+        loadWorldsProvider();
 
-        IslandCreationAlgorithm islandCreationAlgorithm = plugin.getGrid().getIslandCreationAlgorithm();
-        plugin.getGrid().setIslandCreationAlgorithm(new SlimeWorldsCreationAlgorithm(this, islandCreationAlgorithm));
+        loadCreationAlgorithm();
     }
 
     @Override
@@ -96,6 +97,10 @@ public final class SlimeWorldModule extends PluginModule {
         return slimeAdapter;
     }
 
+    public SlimeWorldsProvider getSlimeWorldsProvider() {
+        return slimeWorldsProvider;
+    }
+
     public SuperiorSkyblock getPlugin() {
         return plugin;
     }
@@ -107,6 +112,16 @@ public final class SlimeWorldModule extends PluginModule {
         } catch (Throwable error) {
             slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
         }
+    }
+
+    private void loadWorldsProvider() {
+        slimeWorldsProvider = new SlimeWorldsProvider(this);
+        plugin.getProviders().setWorldsProvider(this.slimeWorldsProvider);
+    }
+
+    private void loadCreationAlgorithm() {
+        IslandCreationAlgorithm islandCreationAlgorithm = plugin.getGrid().getIslandCreationAlgorithm();
+        plugin.getGrid().setIslandCreationAlgorithm(new SlimeWorldsCreationAlgorithm(this, islandCreationAlgorithm));
     }
 
     private ISlimeAdapter createAdapterInstance(String className) {
