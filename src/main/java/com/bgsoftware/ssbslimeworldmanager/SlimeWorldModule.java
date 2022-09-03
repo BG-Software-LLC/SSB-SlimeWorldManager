@@ -73,13 +73,12 @@ public final class SlimeWorldModule extends PluginModule {
     }
 
     private void loadAdapter() {
-        slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
-//        try {
-//            Class.forName("");
-//            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm.SWMAdapter");
-//        } catch (Throwable error) {
-//            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
-//        }
+        try {
+            Class.forName("com.grinderwolf.swm.nms.world.AbstractSlimeNMSWorld");
+            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm.SWMAdapter");
+        } catch (Throwable error) {
+            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
+        }
     }
 
     private static ISlimeAdapter createAdapterInstance(String className) {

@@ -1,0 +1,12 @@
+group 'AdvancedSlimeWorldManager'
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(15))
+    }
+}
+
+dependencies {
+    compileOnly "com.grinderwolf:SlimeWorldManager:2.8.0"
+    compileOnly parent
+}

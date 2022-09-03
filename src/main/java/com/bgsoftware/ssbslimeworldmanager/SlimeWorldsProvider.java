@@ -24,8 +24,12 @@ public final class SlimeWorldsProvider implements WorldsProvider {
 
     @Override
     public World getIslandsWorld(Island island, World.Environment environment) {
+        if (!isEnvironmentEnabled(environment))
+            return null;
+
         ISlimeWorld slimeWorld = this.module.getSlimeAdapter().loadAndGetWorld(island, environment);
         WorldUnloadTask.getTask(slimeWorld.getName()).updateLastTime();
+
         return Bukkit.getWorld(slimeWorld.getName());
     }
 
@@ -36,7 +40,8 @@ public final class SlimeWorldsProvider implements WorldsProvider {
 
     @Override
     public Location getNextLocation(Location previousLocation, int islandsHeight, int maxIslandSize, UUID islandOwner, UUID islandUUID) {
-        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().loadAndGetWorld(islandUUID, World.Environment.NORMAL);
+        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().loadAndGetWorld(islandUUID,
+                module.getPlugin().getSettings().getWorlds().getDefaultWorld());
         WorldUnloadTask.getTask(slimeWorld.getName());
         return new Location(Bukkit.getWorld(slimeWorld.getName()), 0, islandsHeight, 0);
     }
@@ -57,32 +62,45 @@ public final class SlimeWorldsProvider implements WorldsProvider {
 
     @Override
     public boolean isNormalEnabled() {
-        return true;
+        return module.getPlugin().getSettings().getWorlds().getNormal().isEnabled();
     }
 
     @Override
     public boolean isNormalUnlocked() {
-        return true;
+        return module.getPlugin().getSettings().getWorlds().getNormal().isUnlocked();
     }
 
     @Override
     public boolean isNetherEnabled() {
-        return true;
+        return module.getPlugin().getSettings().getWorlds().getNether().isEnabled();
     }
 
     @Override
     public boolean isNetherUnlocked() {
-        return false;
+        return module.getPlugin().getSettings().getWorlds().getNether().isUnlocked();
     }
 
     @Override
     public boolean isEndEnabled() {
-        return true;
+        return module.getPlugin().getSettings().getWorlds().getEnd().isEnabled();
     }
 
     @Override
     public boolean isEndUnlocked() {
-        return false;
+        return module.getPlugin().getSettings().getWorlds().getEnd().isUnlocked();
+    }
+
+    private boolean isEnvironmentEnabled(World.Environment environment) {
+        switch (environment) {
+            case NORMAL:
+                return isNormalEnabled();
+            case NETHER:
+                return isNetherEnabled();
+            case THE_END:
+                return isEndEnabled();
+            default:
+                return false;
+        }
     }
 
 }
