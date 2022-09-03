@@ -56,8 +56,6 @@ public final class SWMAdapter implements ISlimeAdapter {
                     slimeWorld = new SWMSlimeWorld(slimePlugin.createEmptyWorld(slimePlugin.getLoader(defaultWorldData.getDataSource()),
                             worldName, defaultWorldData.isReadOnly(), slimePropertyMap));
 
-                    new Exception().printStackTrace();
-
                     // Saving the world
                     WorldsConfig config = ConfigManager.getWorldConfig();
                     config.getWorlds().put(worldName, defaultWorldData);
