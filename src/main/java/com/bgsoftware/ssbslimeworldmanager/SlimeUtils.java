@@ -2,7 +2,6 @@ package com.bgsoftware.ssbslimeworldmanager;
 
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblockAPI;
-import com.bgsoftware.superiorskyblock.api.island.Island;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
@@ -67,10 +66,6 @@ public final class SlimeUtils {
         return completableFuture;
     }
 
-    public static String getWorldName(Island island, World.Environment environment) {
-        return getWorldName(island.getUniqueId(), environment);
-    }
-
     public static String getWorldName(UUID islandUUID, World.Environment environment) {
         return "island_" + islandUUID + "_" + environment.name().toLowerCase();
     }
@@ -78,9 +73,13 @@ public final class SlimeUtils {
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public static boolean isIslandWorldName(String worldName) {
         String[] nameSections = worldName.split("_");
+
+        if (nameSections.length != 3)
+            return false;
+
         try {
-            UUID.fromString(nameSections[0]);
-            World.Environment.valueOf(nameSections[1]);
+            UUID.fromString(nameSections[1]);
+            World.Environment.valueOf(nameSections[2]);
             return true;
         } catch (Exception ex) {
             return false;

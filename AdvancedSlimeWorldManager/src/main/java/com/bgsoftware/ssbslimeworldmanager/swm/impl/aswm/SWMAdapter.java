@@ -78,7 +78,7 @@ public final class SWMAdapter implements ISlimeAdapter {
 
     @Override
     public void deleteWorld(Island island, World.Environment environment) {
-        String worldName = SlimeUtils.getWorldName(island, environment);
+        String worldName = SlimeUtils.getWorldName(island.getUniqueId(), environment);
 
         WorldData worldData = ConfigManager.getWorldConfig().getWorlds().get(worldName);
 
