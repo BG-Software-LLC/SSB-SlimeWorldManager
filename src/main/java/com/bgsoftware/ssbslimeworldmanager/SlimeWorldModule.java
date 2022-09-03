@@ -1,16 +1,23 @@
 package com.bgsoftware.ssbslimeworldmanager;
 
+import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsCreationAlgorithm;
+import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsProvider;
 import com.bgsoftware.ssbslimeworldmanager.listeners.IslandsListener;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeAdapter;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.commands.SuperiorCommand;
 import com.bgsoftware.superiorskyblock.api.modules.ModuleLoadTime;
 import com.bgsoftware.superiorskyblock.api.modules.PluginModule;
+import com.bgsoftware.superiorskyblock.api.world.algorithm.IslandCreationAlgorithm;
 import org.bukkit.Bukkit;
 import org.bukkit.event.Listener;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public final class SlimeWorldModule extends PluginModule {
 
@@ -31,6 +38,9 @@ public final class SlimeWorldModule extends PluginModule {
         loadAdapter();
 
         plugin.getProviders().setWorldsProvider(new SlimeWorldsProvider(this));
+
+        IslandCreationAlgorithm islandCreationAlgorithm = plugin.getGrid().getIslandCreationAlgorithm();
+        plugin.getGrid().setIslandCreationAlgorithm(new SlimeWorldsCreationAlgorithm(this, islandCreationAlgorithm));
     }
 
     @Override
@@ -40,7 +50,24 @@ public final class SlimeWorldModule extends PluginModule {
 
     @Override
     public void onDisable(SuperiorSkyblock plugin) {
-        slimeAdapter.unloadAllWorlds();
+        List<String> worlds;
+
+        try {
+            worlds = slimeAdapter.getLoadedWorlds();
+        } catch (IOException error) {
+            error.printStackTrace();
+            return;
+        }
+
+        List<CompletableFuture<Boolean>> unloadWorldTasks = new ArrayList<>(worlds.size());
+
+        for (String worldName : worlds) {
+            if (SlimeUtils.isIslandWorldName(worldName) && Bukkit.getWorld(worldName) != null)
+                unloadWorldTasks.add(SlimeUtils.unloadWorld(worldName, true));
+        }
+
+        // Wait for all the tasks to complete.
+        CompletableFuture.allOf(unloadWorldTasks.toArray(new CompletableFuture[0])).join();
     }
 
     @Override

@@ -15,6 +15,8 @@ import com.grinderwolf.swm.plugin.config.WorldsConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 
 public final class SWMAdapter implements ISlimeAdapter {
@@ -30,19 +32,12 @@ public final class SWMAdapter implements ISlimeAdapter {
     }
 
     @Override
-    public void unloadAllWorlds() {
-        try {
-            slimePlugin.getLoader(defaultWorldData.getDataSource()).listWorlds().forEach(worldName -> {
-                if (SlimeUtils.isIslandWorldName(worldName) && Bukkit.getWorld(worldName) != null)
-                    SlimeUtils.unloadWorld(worldName);
-            });
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    public List<String> getLoadedWorlds() throws IOException {
+        return slimePlugin.getLoader(defaultWorldData.getDataSource()).listWorlds();
     }
 
     @Override
-    public ISlimeWorld loadAndGetWorld(String worldName, World.Environment environment) {
+    public ISlimeWorld loadWorld(String worldName, World.Environment environment) {
         ISlimeWorld slimeWorld = SlimeUtils.getSlimeWorld(worldName);
 
         if (slimeWorld == null) {
@@ -71,30 +66,38 @@ public final class SWMAdapter implements ISlimeAdapter {
             }
         }
 
-        if (Bukkit.getWorld(worldName) == null)
-            slimePlugin.generateWorld(((SWMSlimeWorld) slimeWorld).getHandle());
-
         return slimeWorld;
     }
 
     @Override
-    public void deleteWorld(SuperiorSkyblock plugin, Island island, World.Environment environment) {
-        String worldName = SlimeUtils.getWorldName(island, environment);
+    public void generateWorld(ISlimeWorld slimeWorld) {
+        slimePlugin.generateWorld(((SWMSlimeWorld) slimeWorld).getHandle());
+    }
 
-        SlimeUtils.unloadWorld(worldName);
+    @Override
+    public void deleteWorld(Island island, World.Environment environment) {
+        String worldName = SlimeUtils.getWorldName(island, environment);
 
         WorldData worldData = ConfigManager.getWorldConfig().getWorlds().get(worldName);
 
-        if (worldData != null) {
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                try {
-                    SlimeLoader slimeLoader = slimePlugin.getLoader(worldData.getDataSource());
-                    slimeLoader.deleteWorld(worldName);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }, 20L);
-        }
+        if (worldData == null)
+            return;
+
+        SlimeLoader slimeLoader = slimePlugin.getLoader(worldData.getDataSource());
+
+        SlimeUtils.unloadWorld(worldName, false).whenComplete((result, error) -> {
+            if (error != null) {
+                error.printStackTrace();
+            } else {
+                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                    try {
+                        slimeLoader.deleteWorld(worldName);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                });
+            }
+        });
     }
 
     private WorldData buildDefaultWorldData() {

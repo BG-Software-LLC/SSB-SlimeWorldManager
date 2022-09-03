@@ -1,26 +1,19 @@
 package com.bgsoftware.ssbslimeworldmanager.swm;
 
-import com.bgsoftware.ssbslimeworldmanager.SlimeUtils;
-import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import org.bukkit.World;
 
-import java.util.UUID;
+import java.io.IOException;
+import java.util.List;
 
 public interface ISlimeAdapter {
 
-    void unloadAllWorlds();
+    List<String> getLoadedWorlds() throws IOException;
 
-    default ISlimeWorld loadAndGetWorld(Island island, World.Environment environment) {
-        return loadAndGetWorld(island.getUniqueId(), environment);
-    }
+    ISlimeWorld loadWorld(String worldName, World.Environment environment);
 
-    default ISlimeWorld loadAndGetWorld(UUID islandUUID, World.Environment environment) {
-        return loadAndGetWorld(SlimeUtils.getWorldName(islandUUID, environment), environment);
-    }
+    void generateWorld(ISlimeWorld slimeWorld);
 
-    ISlimeWorld loadAndGetWorld(String worldName, World.Environment environment);
-
-    void deleteWorld(SuperiorSkyblock plugin, Island island, World.Environment environment);
+    void deleteWorld(Island island, World.Environment environment);
 
 }

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public final class SlimeUtils {
 
@@ -35,27 +36,35 @@ public final class SlimeUtils {
         }
     }
 
-    public static void unloadWorld(String worldName) {
+    public static CompletableFuture<Boolean> unloadWorld(String worldName, boolean saveWorlds) {
+        CompletableFuture<Boolean> completableFuture = new CompletableFuture<>();
+
         ISlimeWorld slimeWorld = islandWorlds.remove(worldName);
         if (slimeWorld != null) {
-            try {
-                slimeWorld.serialize().whenComplete((serializeData, error) -> {
-                    if (error == null) {
-                        try {
-                            slimeWorld.getLoader().saveWorld(worldName, serializeData);
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
+            if (saveWorlds) {
+                try {
+                    slimeWorld.serialize().whenComplete((serializeData, error) -> {
+                        if (error == null) {
+                            try {
+                                slimeWorld.getLoader().saveWorld(worldName, serializeData);
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            }
 
-                        Bukkit.unloadWorld(worldName, true);
-                    } else {
-                        error.printStackTrace();
-                    }
-                });
-            } catch (IOException ex) {
-                ex.printStackTrace();
+                            completableFuture.complete(Bukkit.unloadWorld(worldName, true));
+                        } else {
+                            completableFuture.completeExceptionally(error);
+                        }
+                    });
+                } catch (IOException error) {
+                    completableFuture.completeExceptionally(error);
+                }
+            } else {
+                return CompletableFuture.completedFuture(Bukkit.unloadWorld(worldName, false));
             }
         }
+
+        return completableFuture;
     }
 
     public static String getWorldName(Island island, World.Environment environment) {

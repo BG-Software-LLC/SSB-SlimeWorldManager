@@ -40,7 +40,7 @@ public final class WorldUnloadTask extends BukkitRunnable {
         long currentTime = System.currentTimeMillis() / 1000;
 
         if (currentTime - lastTimeUpdate > UNLOAD_DELAY && world.getPlayers().isEmpty()) {
-            SlimeUtils.unloadWorld(worldName);
+            SlimeUtils.unloadWorld(worldName, true);
         } else {
             updateLastTime();
         }
