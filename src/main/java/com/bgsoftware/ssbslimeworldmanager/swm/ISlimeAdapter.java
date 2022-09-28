@@ -10,7 +10,7 @@ public interface ISlimeAdapter {
 
     List<String> getLoadedWorlds() throws IOException;
 
-    ISlimeWorld loadWorld(String worldName, World.Environment environment);
+    ISlimeWorld createOrLoadWorld(String worldName, World.Environment environment);
 
     void generateWorld(ISlimeWorld slimeWorld);
 

@@ -1,6 +1,6 @@
 package com.bgsoftware.ssbslimeworldmanager.hook;
 
-import com.bgsoftware.ssbslimeworldmanager.SlimeUtils;
+import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.bgsoftware.superiorskyblock.api.schematic.Schematic;
@@ -34,7 +34,7 @@ public class SlimeWorldsCreationAlgorithm implements IslandCreationAlgorithm {
 
         Bukkit.getScheduler().runTaskAsynchronously(module.getPlugin(), () -> {
             // Loading the world asynchronous.
-            ISlimeWorld slimeWorld = this.module.getSlimeAdapter().loadWorld(worldName, environment);
+            ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
                 // Generating the world synchronized
                 this.module.getSlimeAdapter().generateWorld(slimeWorld);

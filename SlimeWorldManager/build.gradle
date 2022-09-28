@@ -1,6 +1,10 @@
 group 'SlimeWorldManager'
 
+repositories {
+    maven { url 'https://repo.glaremasters.me/repository/concuncan/' }
+}
+
 dependencies {
-    compileOnly "com.grinderwolf:SlimeWorldManager:latest"
+    compileOnly "com.grinderwolf:slimeworldmanager-api:2.2.1"
     compileOnly parent
 }

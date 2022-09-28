@@ -1,8 +1,8 @@
 package com.bgsoftware.ssbslimeworldmanager.hook;
 
-import com.bgsoftware.ssbslimeworldmanager.SlimeUtils;
+import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
-import com.bgsoftware.ssbslimeworldmanager.WorldUnloadTask;
+import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.bgsoftware.superiorskyblock.api.hooks.WorldsProvider;
 import com.bgsoftware.superiorskyblock.api.island.Island;
@@ -98,18 +98,16 @@ public final class SlimeWorldsProvider implements WorldsProvider {
         String worldName = SlimeUtils.getWorldName(islandUUID, environment);
         World bukkitWorld = Bukkit.getWorld(worldName);
 
-        if (bukkitWorld != null)
+        if (bukkitWorld != null) {
+            WorldUnloadTask.getTask(worldName).updateLastTimeAccessed();
             return bukkitWorld;
+        }
 
         // We load the world synchronized as we need it right now.
-        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().loadWorld(worldName, environment);
-        WorldUnloadTask.getTask(slimeWorld.getName()).updateLastTime();
-
-        World world = Bukkit.getWorld(slimeWorld.getName());
-        if (world != null)
-            return world;
+        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
 
         this.module.getSlimeAdapter().generateWorld(slimeWorld);
+        WorldUnloadTask.getTask(slimeWorld.getName()).updateLastTimeAccessed();
 
         return Bukkit.getWorld(slimeWorld.getName());
     }
@@ -118,18 +116,21 @@ public final class SlimeWorldsProvider implements WorldsProvider {
         String worldName = SlimeUtils.getWorldName(islandUUID, environment);
         World bukkitWorld = Bukkit.getWorld(worldName);
 
-        if (bukkitWorld != null)
+        if (bukkitWorld != null) {
+            WorldUnloadTask.getTask(worldName).updateLastTimeAccessed();
             return CompletableFuture.completedFuture(bukkitWorld);
+        }
 
         CompletableFuture<World> result = new CompletableFuture<>();
 
         Bukkit.getScheduler().runTaskAsynchronously(module.getPlugin(), () -> {
             // Loading the world asynchronous.
-            ISlimeWorld slimeWorld = this.module.getSlimeAdapter().loadWorld(worldName, environment);
+            ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
                 // Generating the world synchronized
                 this.module.getSlimeAdapter().generateWorld(slimeWorld);
                 result.complete(Bukkit.getWorld(worldName));
+                WorldUnloadTask.getTask(worldName).updateLastTimeAccessed();
             });
         });
 

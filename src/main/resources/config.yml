@@ -1,0 +1,7 @@
+# Data Source - where should we save the islands too (ex. file, mysql, etc)?
+# These datasource values must be supported by either SWM or ASWM (whichever one you are using)
+#
+# Unload Delay - how long should it take for islands to be unloaded if they are currently inactive (in seconds)?
+settings:
+  data_source: "file"
+  unload_delay: 30
