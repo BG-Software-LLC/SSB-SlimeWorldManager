@@ -67,8 +67,6 @@ public final class SlimeWorldModule extends PluginModule {
             return;
         }
 
-
-
         // save all the islands when the server shuts down
         for (String worldName : worlds) {
             if (SlimeUtils.isIslandWorldName(worldName) && Bukkit.getWorld(worldName) != null) {
