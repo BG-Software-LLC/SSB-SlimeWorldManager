@@ -5,6 +5,7 @@ import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeAdapter;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.google.common.base.Preconditions;
 import com.grinderwolf.swm.api.SlimePlugin;
 import com.grinderwolf.swm.api.exceptions.*;
 import com.grinderwolf.swm.api.loaders.SlimeLoader;
@@ -42,13 +43,14 @@ public final class SWMAdapter implements ISlimeAdapter {
         if (slimeWorld == null) {
             SlimePropertyMap properties = new SlimePropertyMap();
 
-            properties.setString(SlimeProperties.DIFFICULTY, plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
-            properties.setString(SlimeProperties.ENVIRONMENT, environment.name().toLowerCase(Locale.ENGLISH));
-
             try {
                 if (slimeLoader.worldExists(worldName)) {
                     slimeWorld = new SWMSlimeWorld(slimePlugin.loadWorld(slimeLoader, worldName, false, properties));
                 } else {
+                    // set the default island properties accordingly
+                    properties.setString(SlimeProperties.DIFFICULTY, plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
+                    properties.setString(SlimeProperties.ENVIRONMENT, environment.name().toLowerCase(Locale.ENGLISH));
+
                     slimeWorld = new SWMSlimeWorld(slimePlugin.createEmptyWorld(slimeLoader, worldName, false, properties));
                 }
 
@@ -64,6 +66,7 @@ public final class SWMAdapter implements ISlimeAdapter {
 
     @Override
     public void generateWorld(ISlimeWorld slimeWorld) {
+        Preconditions.checkState(Bukkit.isPrimaryThread(), "cannot generate worlds async.");
         slimePlugin.generateWorld(((SWMSlimeWorld) slimeWorld).getHandle());
     }
 
