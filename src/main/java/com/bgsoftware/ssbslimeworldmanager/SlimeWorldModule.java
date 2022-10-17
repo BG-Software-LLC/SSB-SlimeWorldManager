@@ -94,7 +94,7 @@ public final class SlimeWorldModule extends PluginModule {
 
     @Override
     public ModuleLoadTime getLoadTime() {
-        return ModuleLoadTime.AFTER_HANDLERS_LOADING;
+        return ModuleLoadTime.BEFORE_WORLD_CREATION;
     }
 
     public static ConfigSettings getConfigSettings() {

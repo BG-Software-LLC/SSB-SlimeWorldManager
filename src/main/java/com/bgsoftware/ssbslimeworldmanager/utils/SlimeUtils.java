@@ -1,15 +1,15 @@
 package com.bgsoftware.ssbslimeworldmanager.utils;
 
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
-import com.bgsoftware.superiorskyblock.api.SuperiorSkyblockAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class SlimeUtils {
 
-    private static final Map<String, ISlimeWorld> islandWorlds = new HashMap<>();
+    private static final Map<String, ISlimeWorld> islandWorlds = new ConcurrentHashMap<>();
 
     private SlimeUtils() {
         throw new IllegalStateException("Can not access utility class.");
@@ -24,12 +24,7 @@ public final class SlimeUtils {
     }
 
     public static boolean isIslandsWorld(String worldName) {
-        String[] nameSections = worldName.split("_");
-        try {
-            return SuperiorSkyblockAPI.getGrid().getIslandByUUID(UUID.fromString(nameSections[1])) != null;
-        } catch (Exception exception) {
-            return false;
-        }
+        return islandWorlds.get(worldName) != null;
     }
 
     public static String getWorldName(UUID islandUUID, World.Environment environment) {

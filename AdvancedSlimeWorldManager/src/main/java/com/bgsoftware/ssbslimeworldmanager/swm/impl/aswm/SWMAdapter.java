@@ -43,13 +43,14 @@ public final class SWMAdapter implements ISlimeAdapter {
         if (slimeWorld == null) {
             SlimePropertyMap properties = new SlimePropertyMap();
 
-            properties.setValue(SlimeProperties.DIFFICULTY, plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
-            properties.setValue(SlimeProperties.ENVIRONMENT, environment.name().toLowerCase(Locale.ENGLISH));
-
             try {
                 if (slimeLoader.worldExists(worldName)) {
                     slimeWorld = new SWMSlimeWorld(slimePlugin.loadWorld(slimeLoader, worldName, false, properties));
                 } else {
+                    // set the default island properties accordingly
+                    properties.setValue(SlimeProperties.DIFFICULTY, plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
+                    properties.setValue(SlimeProperties.ENVIRONMENT, environment.name().toLowerCase(Locale.ENGLISH));
+
                     slimeWorld = new SWMSlimeWorld(slimePlugin.createEmptyWorld(slimeLoader, worldName, false, properties));
                 }
 
