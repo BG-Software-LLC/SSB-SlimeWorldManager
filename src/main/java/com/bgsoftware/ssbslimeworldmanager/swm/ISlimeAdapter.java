@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface ISlimeAdapter {
 
-    List<String> getLoadedWorlds() throws IOException;
+    List<String> getSavedWorlds() throws IOException;
 
     ISlimeWorld createOrLoadWorld(String worldName, World.Environment environment);
 

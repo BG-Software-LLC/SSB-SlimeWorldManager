@@ -32,7 +32,7 @@ public final class SWMAdapter implements ISlimeAdapter {
     }
 
     @Override
-    public List<String> getLoadedWorlds() throws IOException {
+    public List<String> getSavedWorlds() throws IOException {
         return slimeLoader.listWorlds();
     }
 

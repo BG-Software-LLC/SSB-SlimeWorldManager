@@ -61,7 +61,7 @@ public final class SlimeWorldModule extends PluginModule {
         final List<String> worlds;
 
         try {
-            worlds = slimeAdapter.getLoadedWorlds();
+            worlds = slimeAdapter.getSavedWorlds();
         } catch (IOException error) {
             error.printStackTrace();
             return;

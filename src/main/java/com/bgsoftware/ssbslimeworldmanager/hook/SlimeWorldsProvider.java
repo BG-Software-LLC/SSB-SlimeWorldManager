@@ -4,16 +4,18 @@ import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
 import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
-import com.bgsoftware.superiorskyblock.api.hooks.WorldsProvider;
+import com.bgsoftware.superiorskyblock.api.hooks.LazyWorldsProvider;
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.bgsoftware.superiorskyblock.api.world.WorldInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 
+import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public final class SlimeWorldsProvider implements WorldsProvider {
+public final class SlimeWorldsProvider implements LazyWorldsProvider {
 
     private final SlimeWorldModule module;
 
@@ -92,6 +94,20 @@ public final class SlimeWorldsProvider implements WorldsProvider {
     @Override
     public boolean isEndUnlocked() {
         return isEndEnabled() && module.getPlugin().getSettings().getWorlds().getEnd().isUnlocked();
+    }
+
+    @Nullable
+    @Override
+    public WorldInfo getIslandsWorldInfo(Island island, World.Environment environment) {
+        return WorldInfo.of(SlimeUtils.getWorldName(island.getUniqueId(), environment), environment);
+    }
+
+    @Nullable
+    @Override
+    public WorldInfo getIslandsWorldInfo(Island island, String worldName) {
+        World.Environment environment = SlimeUtils.getEnvironment(worldName);
+        if (environment == null) return null;
+        return WorldInfo.of(worldName, environment);
     }
 
     public World getSlimeWorldAsBukkit(UUID islandUUID, World.Environment environment) {

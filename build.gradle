@@ -32,7 +32,7 @@ allprojects {
     }
 
     dependencies {
-        compileOnly 'com.bgsoftware:SuperiorSkyblockAPI:1.10.2'
+        compileOnly project.getRootProject().files("libs/SuperiorSkyblock2API.jar")
 
         // Spigot jars
         compileOnly "org.spigotmc:v1_8_R3-Taco:latest"

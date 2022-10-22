@@ -4,6 +4,7 @@ import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,6 +30,16 @@ public final class SlimeUtils {
 
     public static String getWorldName(UUID islandUUID, World.Environment environment) {
         return "island_" + islandUUID + "_" + environment.name().toLowerCase();
+    }
+
+    @Nullable
+    public static World.Environment getEnvironment(String worldName) {
+        String[] nameSections = worldName.split("_");
+
+        if(nameSections.length != 3)
+            return null;
+
+        return World.Environment.valueOf(nameSections[2].toUpperCase(Locale.ENGLISH));
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
