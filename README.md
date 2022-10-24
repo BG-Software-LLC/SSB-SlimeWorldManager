@@ -15,5 +15,5 @@ to under the module's configuration file, as well as the amount of time until an
 
 ## Credits
 
-- Ome_R for the base-code & fixing loads of issues in SSB2 preventing this addon from working.
+- Ome_R for the base-code & fixing lots of issues in SSB2 preventing this addon from working.
 - Ambrosia for a rework of the addon and assisting Ome_R with fixing issues in SSB2.
