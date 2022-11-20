@@ -1,19 +1,21 @@
 package com.bgsoftware.ssbslimeworldmanager.hook;
 
-import com.bgsoftware.ssbslimeworldmanager.SlimeUtils;
+import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
-import com.bgsoftware.ssbslimeworldmanager.WorldUnloadTask;
+import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
-import com.bgsoftware.superiorskyblock.api.hooks.WorldsProvider;
+import com.bgsoftware.superiorskyblock.api.hooks.LazyWorldsProvider;
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.bgsoftware.superiorskyblock.api.world.WorldInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 
+import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public final class SlimeWorldsProvider implements WorldsProvider {
+public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     private final SlimeWorldModule module;
 
@@ -94,22 +96,34 @@ public final class SlimeWorldsProvider implements WorldsProvider {
         return isEndEnabled() && module.getPlugin().getSettings().getWorlds().getEnd().isUnlocked();
     }
 
+    @Nullable
+    @Override
+    public WorldInfo getIslandsWorldInfo(Island island, World.Environment environment) {
+        return WorldInfo.of(SlimeUtils.getWorldName(island.getUniqueId(), environment), environment);
+    }
+
+    @Nullable
+    @Override
+    public WorldInfo getIslandsWorldInfo(Island island, String worldName) {
+        World.Environment environment = SlimeUtils.getEnvironment(worldName);
+        if (environment == null) return null;
+        return WorldInfo.of(worldName, environment);
+    }
+
     public World getSlimeWorldAsBukkit(UUID islandUUID, World.Environment environment) {
         String worldName = SlimeUtils.getWorldName(islandUUID, environment);
         World bukkitWorld = Bukkit.getWorld(worldName);
 
-        if (bukkitWorld != null)
+        if (bukkitWorld != null) {
+            WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             return bukkitWorld;
+        }
 
         // We load the world synchronized as we need it right now.
-        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().loadWorld(worldName, environment);
-        WorldUnloadTask.getTask(slimeWorld.getName()).updateLastTime();
-
-        World world = Bukkit.getWorld(slimeWorld.getName());
-        if (world != null)
-            return world;
+        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
 
         this.module.getSlimeAdapter().generateWorld(slimeWorld);
+        WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
 
         return Bukkit.getWorld(slimeWorld.getName());
     }
@@ -118,18 +132,21 @@ public final class SlimeWorldsProvider implements WorldsProvider {
         String worldName = SlimeUtils.getWorldName(islandUUID, environment);
         World bukkitWorld = Bukkit.getWorld(worldName);
 
-        if (bukkitWorld != null)
+        if (bukkitWorld != null) {
+            WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             return CompletableFuture.completedFuture(bukkitWorld);
+        }
 
         CompletableFuture<World> result = new CompletableFuture<>();
 
         Bukkit.getScheduler().runTaskAsynchronously(module.getPlugin(), () -> {
             // Loading the world asynchronous.
-            ISlimeWorld slimeWorld = this.module.getSlimeAdapter().loadWorld(worldName, environment);
+            ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
                 // Generating the world synchronized
                 this.module.getSlimeAdapter().generateWorld(slimeWorld);
                 result.complete(Bukkit.getWorld(worldName));
+                WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             });
         });
 

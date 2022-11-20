@@ -1,9 +1,11 @@
 package com.bgsoftware.ssbslimeworldmanager;
 
+import com.bgsoftware.ssbslimeworldmanager.config.SettingsManager;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsCreationAlgorithm;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsProvider;
 import com.bgsoftware.ssbslimeworldmanager.listeners.IslandsListener;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeAdapter;
+import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.commands.SuperiorCommand;
 import com.bgsoftware.superiorskyblock.api.modules.ModuleLoadTime;
@@ -15,19 +17,21 @@ import org.bukkit.event.Listener;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
-public final class SlimeWorldModule extends PluginModule {
+public class SlimeWorldModule extends PluginModule {
+
+    private static SlimeWorldModule instance;
+
+    private SuperiorSkyblock plugin;
+    private SettingsManager settingsManager;
 
     private ISlimeAdapter slimeAdapter;
-    private SuperiorSkyblock plugin;
-
     private SlimeWorldsProvider slimeWorldsProvider;
 
     public SlimeWorldModule() {
         super("SlimeWorldIslands", "Ome_R");
+        instance = this;
     }
 
     @Override
@@ -37,7 +41,12 @@ public final class SlimeWorldModule extends PluginModule {
         if (!Bukkit.getPluginManager().isPluginEnabled("SlimeWorldManager"))
             throw new RuntimeException("SlimeWorldManager must be installed in order to use this module.");
 
+        this.settingsManager = new SettingsManager(this);
+
         loadAdapter();
+
+        if (slimeAdapter == null)
+            throw new RuntimeException("Could not find SWM/ASWM adapter. Ensure that your data source is correct in the config.yml for SlimeWorldIslands.");
 
         loadWorldsProvider();
 
@@ -54,21 +63,18 @@ public final class SlimeWorldModule extends PluginModule {
         List<String> worlds;
 
         try {
-            worlds = slimeAdapter.getLoadedWorlds();
+            worlds = slimeAdapter.getSavedWorlds();
         } catch (IOException error) {
             error.printStackTrace();
             return;
         }
 
-        List<CompletableFuture<Boolean>> unloadWorldTasks = new ArrayList<>(worlds.size());
-
+        // Save all the islands when the server shuts down
         for (String worldName : worlds) {
-            if (SlimeUtils.isIslandWorldName(worldName) && Bukkit.getWorld(worldName) != null)
-                unloadWorldTasks.add(SlimeUtils.unloadWorld(worldName, true));
+            if (SlimeUtils.isIslandWorldName(worldName) && Bukkit.getWorld(worldName) != null) {
+                SlimeUtils.saveAndUnloadWorld(worldName);
+            }
         }
-
-        // Wait for all the tasks to complete.
-        CompletableFuture.allOf(unloadWorldTasks.toArray(new CompletableFuture[0])).join();
     }
 
     @Override
@@ -90,7 +96,11 @@ public final class SlimeWorldModule extends PluginModule {
 
     @Override
     public ModuleLoadTime getLoadTime() {
-        return ModuleLoadTime.AFTER_HANDLERS_LOADING;
+        return ModuleLoadTime.BEFORE_WORLD_CREATION;
+    }
+
+    public SettingsManager getSettings() {
+        return settingsManager;
     }
 
     public ISlimeAdapter getSlimeAdapter() {
@@ -103,6 +113,10 @@ public final class SlimeWorldModule extends PluginModule {
 
     public SuperiorSkyblock getPlugin() {
         return plugin;
+    }
+
+    public static SlimeWorldModule getModule() {
+        return instance;
     }
 
     private void loadAdapter() {
@@ -129,12 +143,14 @@ public final class SlimeWorldModule extends PluginModule {
             Class<?> clazz = Class.forName(className);
 
             for (Constructor<?> constructor : clazz.getConstructors()) {
-                if (constructor.getParameterCount() == 1 && constructor.getParameterTypes()[0].equals(SuperiorSkyblock.class))
-                    return (ISlimeAdapter) constructor.newInstance(this.plugin);
+                if (constructor.getParameterCount() == 2 && (constructor.getParameterTypes()[0].equals(SuperiorSkyblock.class) && constructor.getParameterTypes()[1].equals(String.class))) {
+                    return (ISlimeAdapter) constructor.newInstance(this.plugin, settingsManager.dataSource);
+                }
             }
 
             return (ISlimeAdapter) clazz.newInstance();
-        } catch (Exception error) {
+        } catch (Exception exception) {
+            exception.printStackTrace();
             return null;
         }
     }

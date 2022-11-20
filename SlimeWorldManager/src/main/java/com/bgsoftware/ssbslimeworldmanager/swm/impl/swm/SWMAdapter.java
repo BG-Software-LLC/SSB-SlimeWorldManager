@@ -1,68 +1,63 @@
 package com.bgsoftware.ssbslimeworldmanager.swm.impl.swm;
 
-import com.bgsoftware.ssbslimeworldmanager.SlimeUtils;
+import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeAdapter;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.google.common.base.Preconditions;
 import com.grinderwolf.swm.api.SlimePlugin;
+import com.grinderwolf.swm.api.exceptions.*;
 import com.grinderwolf.swm.api.loaders.SlimeLoader;
 import com.grinderwolf.swm.api.world.properties.SlimeProperties;
 import com.grinderwolf.swm.api.world.properties.SlimePropertyMap;
-import com.grinderwolf.swm.plugin.config.ConfigManager;
-import com.grinderwolf.swm.plugin.config.WorldData;
-import com.grinderwolf.swm.plugin.config.WorldsConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Level;
 
-public final class SWMAdapter implements ISlimeAdapter {
+public class SWMAdapter implements ISlimeAdapter {
 
     private final SuperiorSkyblock plugin;
     private final SlimePlugin slimePlugin;
-    private final WorldData defaultWorldData;
+    private final SlimeLoader slimeLoader;
 
-    public SWMAdapter(SuperiorSkyblock plugin) {
+    public SWMAdapter(SuperiorSkyblock plugin, String dataSource) {
         this.plugin = plugin;
         this.slimePlugin = (SlimePlugin) Bukkit.getPluginManager().getPlugin("SlimeWorldManager");
-        this.defaultWorldData = buildDefaultWorldData();
+        this.slimeLoader = this.slimePlugin.getLoader(dataSource);
     }
 
     @Override
-    public List<String> getLoadedWorlds() throws IOException {
-        return slimePlugin.getLoader(defaultWorldData.getDataSource()).listWorlds();
+    public List<String> getSavedWorlds() throws IOException {
+        return slimeLoader.listWorlds();
     }
 
     @Override
-    public ISlimeWorld loadWorld(String worldName, World.Environment environment) {
+    public ISlimeWorld createOrLoadWorld(String worldName, World.Environment environment) {
         ISlimeWorld slimeWorld = SlimeUtils.getSlimeWorld(worldName);
 
         if (slimeWorld == null) {
-            WorldData worldData = ConfigManager.getWorldConfig().getWorlds().get(worldName);
+            SlimePropertyMap properties = new SlimePropertyMap();
 
             try {
-                // No world was found, creating a new world.
-                if (worldData == null) {
-                    SlimePropertyMap slimePropertyMap = defaultWorldData.toPropertyMap();
-                    slimePropertyMap.setString(SlimeProperties.ENVIRONMENT, environment.name().toUpperCase());
-                    slimeWorld = new SWMSlimeWorld(slimePlugin.createEmptyWorld(slimePlugin.getLoader(defaultWorldData.getDataSource()),
-                            worldName, defaultWorldData.isReadOnly(), slimePropertyMap));
-
-                    // Saving the world
-                    WorldsConfig config = ConfigManager.getWorldConfig();
-                    config.getWorlds().put(worldName, defaultWorldData);
-                    config.save();
+                if (slimeLoader.worldExists(worldName)) {
+                    slimeWorld = new SWMSlimeWorld(slimePlugin.loadWorld(slimeLoader, worldName, false, properties));
                 } else {
-                    slimeWorld = new SWMSlimeWorld(slimePlugin.loadWorld(slimePlugin.getLoader(worldData.getDataSource()),
-                            worldName, worldData.isReadOnly(), worldData.toPropertyMap()));
+                    // set the default island properties accordingly
+                    properties.setString(SlimeProperties.DIFFICULTY, plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
+                    properties.setString(SlimeProperties.ENVIRONMENT, environment.name().toLowerCase(Locale.ENGLISH));
+
+                    slimeWorld = new SWMSlimeWorld(slimePlugin.createEmptyWorld(slimeLoader, worldName, false, properties));
                 }
 
                 SlimeUtils.setSlimeWorld(worldName, slimeWorld);
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
+            } catch (IOException | CorruptedWorldException | NewerFormatException | WorldInUseException |
+                     UnknownWorldException | WorldAlreadyExistsException exception) {
+                plugin.getLogger().log(Level.SEVERE, "An exception occurred while trying to create or load world: " + worldName, exception);
             }
         }
 
@@ -71,6 +66,7 @@ public final class SWMAdapter implements ISlimeAdapter {
 
     @Override
     public void generateWorld(ISlimeWorld slimeWorld) {
+        Preconditions.checkState(Bukkit.isPrimaryThread(), "cannot generate worlds async.");
         slimePlugin.generateWorld(((SWMSlimeWorld) slimeWorld).getHandle());
     }
 
@@ -78,36 +74,15 @@ public final class SWMAdapter implements ISlimeAdapter {
     public void deleteWorld(Island island, World.Environment environment) {
         String worldName = SlimeUtils.getWorldName(island.getUniqueId(), environment);
 
-        WorldData worldData = ConfigManager.getWorldConfig().getWorlds().get(worldName);
-
-        if (worldData == null)
-            return;
-
-        SlimeLoader slimeLoader = slimePlugin.getLoader(worldData.getDataSource());
-
-        SlimeUtils.unloadWorld(worldName, false).whenComplete((result, error) -> {
-            if (error != null) {
-                error.printStackTrace();
-            } else {
-                Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-                    try {
-                        slimeLoader.deleteWorld(worldName);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                });
-            }
-        });
-    }
-
-    private WorldData buildDefaultWorldData() {
-        WorldData worldData = new WorldData();
-
-        worldData.setDataSource("file");
-        worldData.setDifficulty(plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
-        worldData.setLoadOnStartup(false);
-
-        return worldData;
+        if(Bukkit.unloadWorld(worldName, false)) {
+            Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+                try {
+                    slimeLoader.deleteWorld(worldName);
+                } catch (UnknownWorldException | IOException exception) {
+                    throw new RuntimeException(exception);
+                }
+            });
+        }
     }
 
 }

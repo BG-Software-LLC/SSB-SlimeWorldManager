@@ -1,0 +1,14 @@
+######################################################
+##                                                  ##
+##              SSB - SlimeWorldManager             ##
+##                Developed by Ome_R                ##
+##                                                  ##
+######################################################
+
+# The data source to use for the island worlds.
+# This should be identical to the valid values of SlimeWorldManager.
+data-source: 'file'
+
+# The delay until unloading a world from its last access time, in minutes.
+# If you don't want to have any delay, set it to 0 or below.
+unload-delay: 10
