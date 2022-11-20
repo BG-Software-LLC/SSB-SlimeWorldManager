@@ -1,7 +1,14 @@
-# Data Source - where should we save the islands too (ex. file, mysql, etc)?
-# These datasource values must be supported by either SWM or ASWM (whichever one you are using)
-#
-# Unload Delay - how long should it take for islands to be unloaded if they are currently inactive (in seconds)?
-settings:
-  data_source: "file"
-  unload_delay: 30
+######################################################
+##                                                  ##
+##              SSB - SlimeWorldManager             ##
+##                Developed by Ome_R                ##
+##                                                  ##
+######################################################
+
+# The data source to use for the island worlds.
+# This should be identical to the valid values of SlimeWorldManager.
+data_source: "file"
+
+# The delay until unloading a world from its last access time, in minutes.
+# If you don't want to have any delay, set it to 0 or below.
+unload_delay: 10

@@ -11,7 +11,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
-public final class IslandsListener implements Listener {
+public class IslandsListener implements Listener {
 
     private final SlimeWorldModule module;
 

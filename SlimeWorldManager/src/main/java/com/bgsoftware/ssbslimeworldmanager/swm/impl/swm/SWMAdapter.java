@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 
-public final class SWMAdapter implements ISlimeAdapter {
+public class SWMAdapter implements ISlimeAdapter {
 
     private final SuperiorSkyblock plugin;
     private final SlimePlugin slimePlugin;

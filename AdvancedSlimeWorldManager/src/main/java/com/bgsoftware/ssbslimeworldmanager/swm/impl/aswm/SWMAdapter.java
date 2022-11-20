@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 
-public final class SWMAdapter implements ISlimeAdapter {
+public class SWMAdapter implements ISlimeAdapter {
 
     private final SuperiorSkyblock plugin;
     private final SlimePlugin slimePlugin;
@@ -67,7 +67,7 @@ public final class SWMAdapter implements ISlimeAdapter {
     @Override
     public void generateWorld(ISlimeWorld slimeWorld) {
         Preconditions.checkState(Bukkit.isPrimaryThread(), "cannot generate worlds async.");
-        slimePlugin.generateWorld(((SWMSlimeWorld) slimeWorld).getHandle());
+        slimePlugin.generateWorld(((SWMSlimeWorld) slimeWorld).handle());
     }
 
     @Override

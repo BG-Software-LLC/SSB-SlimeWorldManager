@@ -2,8 +2,7 @@ package com.bgsoftware.ssbslimeworldmanager.tasks;
 
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
 import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
-import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
-import com.bgsoftware.superiorskyblock.api.SuperiorSkyblockAPI;
+import com.google.common.base.Preconditions;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -11,53 +10,71 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class WorldUnloadTask extends BukkitRunnable {
+public class WorldUnloadTask extends BukkitRunnable {
 
-    private static final SuperiorSkyblock plugin = SuperiorSkyblockAPI.getSuperiorSkyblock();
+    private static final long MINUTE_IN_TICKS = 1200L;
+
+    private static final WorldUnloadTask EMPTY_TASK = new WorldUnloadTask(null) {
+        @Override
+        public void run() {
+            // If this will ever get called, it should do nothing and cancel itself.
+            cancel();
+        }
+
+        @Override
+        public void updateTimeUntilNextUnload() {
+            // Do nothing.
+        }
+    };
+
+    private static final SlimeWorldModule module = SlimeWorldModule.getModule();
 
     private static final Map<String, WorldUnloadTask> worldUnloadTasks = new ConcurrentHashMap<>();
 
     private final String worldName;
 
-    // gets the last time the island was accessed on the server (in seconds)
-    // if it hasn't been accessed within the unload delay, the world will be unloaded
-    // even if an island member is online, the world can still be unloaded; it will just load on island access
-    private long lastAccessedTimestamp = System.currentTimeMillis() / 1000L;
+    private long timeUntilNextUnload;
 
     private WorldUnloadTask(String worldName) {
+        Preconditions.checkState(worldName == null || module.getSettings().unloadDelay > 0,
+                "Cannot create unload task with negative delay.");
+
         this.worldName = worldName;
 
-        int unloadDelay = SlimeWorldModule.getConfigSettings().getUnloadDelay();
-        runTaskTimer(plugin, 20L, unloadDelay * 20L);
+        if (worldName != null && module.getSettings().unloadDelay > 0) {
+            runTaskTimer(module.getPlugin(), MINUTE_IN_TICKS, module.getSettings().unloadDelay * MINUTE_IN_TICKS);
+            updateTimeUntilNextUnload();
+        }
     }
 
-    public void updateLastTimeAccessed() {
-        lastAccessedTimestamp = System.currentTimeMillis() / 1000L;
+    public void updateTimeUntilNextUnload() {
+        this.timeUntilNextUnload = module.getSettings().unloadDelay;
     }
 
     @Override
     public void run() {
+        if (timeUntilNextUnload-- > 0)
+            return;
+
         final World world = Bukkit.getWorld(worldName);
 
         if (world == null) {
-            stopTask(worldName);
+            cancel();
             return;
         }
 
-        long currentTime = System.currentTimeMillis() / 1000;
+        SlimeUtils.saveAndUnloadWorld(world);
+    }
 
-        if ((currentTime - lastAccessedTimestamp > SlimeWorldModule.getConfigSettings().getUnloadDelay()) && world.getPlayers().isEmpty())
-            Bukkit.getScheduler().runTask(plugin, () -> SlimeUtils.saveAndUnloadWorld(world));
+    @Override
+    public synchronized void cancel() throws IllegalStateException {
+        worldUnloadTasks.remove(this.worldName);
+        super.cancel();
     }
 
     public static WorldUnloadTask getTask(String worldName) {
-        return worldUnloadTasks.computeIfAbsent(worldName, w -> new WorldUnloadTask(worldName));
-    }
-
-    public static void stopTask(String worldName) {
-        WorldUnloadTask worldUnloadTask = worldUnloadTasks.remove(worldName);
-        if (worldUnloadTask != null)
-            worldUnloadTask.cancel();
+        return module.getSettings().unloadDelay <= 0 ? EMPTY_TASK :
+                worldUnloadTasks.computeIfAbsent(worldName, w -> new WorldUnloadTask(worldName));
     }
 
 }

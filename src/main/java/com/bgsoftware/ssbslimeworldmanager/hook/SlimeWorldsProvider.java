@@ -15,7 +15,7 @@ import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public final class SlimeWorldsProvider implements LazyWorldsProvider {
+public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     private final SlimeWorldModule module;
 
@@ -115,7 +115,7 @@ public final class SlimeWorldsProvider implements LazyWorldsProvider {
         World bukkitWorld = Bukkit.getWorld(worldName);
 
         if (bukkitWorld != null) {
-            WorldUnloadTask.getTask(worldName).updateLastTimeAccessed();
+            WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             return bukkitWorld;
         }
 
@@ -123,7 +123,7 @@ public final class SlimeWorldsProvider implements LazyWorldsProvider {
         ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
 
         this.module.getSlimeAdapter().generateWorld(slimeWorld);
-        WorldUnloadTask.getTask(slimeWorld.getName()).updateLastTimeAccessed();
+        WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
 
         return Bukkit.getWorld(slimeWorld.getName());
     }
@@ -133,7 +133,7 @@ public final class SlimeWorldsProvider implements LazyWorldsProvider {
         World bukkitWorld = Bukkit.getWorld(worldName);
 
         if (bukkitWorld != null) {
-            WorldUnloadTask.getTask(worldName).updateLastTimeAccessed();
+            WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             return CompletableFuture.completedFuture(bukkitWorld);
         }
 
@@ -146,7 +146,7 @@ public final class SlimeWorldsProvider implements LazyWorldsProvider {
                 // Generating the world synchronized
                 this.module.getSlimeAdapter().generateWorld(slimeWorld);
                 result.complete(Bukkit.getWorld(worldName));
-                WorldUnloadTask.getTask(worldName).updateLastTimeAccessed();
+                WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             });
         });
 

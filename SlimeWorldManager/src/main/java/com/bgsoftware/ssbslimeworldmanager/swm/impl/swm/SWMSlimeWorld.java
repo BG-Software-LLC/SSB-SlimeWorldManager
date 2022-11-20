@@ -3,7 +3,7 @@ package com.bgsoftware.ssbslimeworldmanager.swm.impl.swm;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.grinderwolf.swm.api.world.SlimeWorld;
 
-public final class SWMSlimeWorld implements ISlimeWorld {
+public class SWMSlimeWorld implements ISlimeWorld {
 
     private final SlimeWorld handle;
 

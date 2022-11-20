@@ -3,21 +3,11 @@ package com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.grinderwolf.swm.api.world.SlimeWorld;
 
-public final class SWMSlimeWorld implements ISlimeWorld {
-
-    private final SlimeWorld handle;
-
-    public SWMSlimeWorld(SlimeWorld handle) {
-        this.handle = handle;
-    }
+public record SWMSlimeWorld(SlimeWorld handle) implements ISlimeWorld {
 
     @Override
     public String getName() {
         return handle.getName();
-    }
-
-    public SlimeWorld getHandle() {
-        return handle;
     }
 
 }

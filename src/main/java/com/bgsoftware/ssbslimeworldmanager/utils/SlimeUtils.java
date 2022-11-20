@@ -8,12 +8,11 @@ import javax.annotation.Nullable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class SlimeUtils {
+public class SlimeUtils {
 
     private static final Map<String, ISlimeWorld> islandWorlds = new ConcurrentHashMap<>();
 
     private SlimeUtils() {
-        throw new IllegalStateException("Can not access utility class.");
     }
 
     public static ISlimeWorld getSlimeWorld(String worldName) {

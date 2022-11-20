@@ -1,6 +1,6 @@
 package com.bgsoftware.ssbslimeworldmanager;
 
-import com.bgsoftware.ssbslimeworldmanager.config.ConfigSettings;
+import com.bgsoftware.ssbslimeworldmanager.config.SettingsManager;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsCreationAlgorithm;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsProvider;
 import com.bgsoftware.ssbslimeworldmanager.listeners.IslandsListener;
@@ -19,17 +19,19 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.List;
 
-public final class SlimeWorldModule extends PluginModule {
+public class SlimeWorldModule extends PluginModule {
 
-    private static ConfigSettings configSettings;
+    private static SlimeWorldModule instance;
+
+    private SuperiorSkyblock plugin;
+    private SettingsManager settingsManager;
 
     private ISlimeAdapter slimeAdapter;
-    private SuperiorSkyblock plugin;
-
     private SlimeWorldsProvider slimeWorldsProvider;
 
     public SlimeWorldModule() {
         super("SlimeWorldIslands", "Ome_R");
+        instance = this;
     }
 
     @Override
@@ -39,11 +41,11 @@ public final class SlimeWorldModule extends PluginModule {
         if (!Bukkit.getPluginManager().isPluginEnabled("SlimeWorldManager"))
             throw new RuntimeException("SlimeWorldManager must be installed in order to use this module.");
 
-        configSettings = new ConfigSettings(this);
+        this.settingsManager = new SettingsManager(this);
 
         loadAdapter();
 
-        if(slimeAdapter == null)
+        if (slimeAdapter == null)
             throw new RuntimeException("Could not find SWM/ASWM adapter. Ensure that your data source is correct in the config.yml for SlimeWorldIslands.");
 
         loadWorldsProvider();
@@ -58,7 +60,7 @@ public final class SlimeWorldModule extends PluginModule {
 
     @Override
     public void onDisable(SuperiorSkyblock plugin) {
-        final List<String> worlds;
+        List<String> worlds;
 
         try {
             worlds = slimeAdapter.getSavedWorlds();
@@ -67,7 +69,7 @@ public final class SlimeWorldModule extends PluginModule {
             return;
         }
 
-        // save all the islands when the server shuts down
+        // Save all the islands when the server shuts down
         for (String worldName : worlds) {
             if (SlimeUtils.isIslandWorldName(worldName) && Bukkit.getWorld(worldName) != null) {
                 SlimeUtils.saveAndUnloadWorld(worldName);
@@ -97,8 +99,8 @@ public final class SlimeWorldModule extends PluginModule {
         return ModuleLoadTime.BEFORE_WORLD_CREATION;
     }
 
-    public static ConfigSettings getConfigSettings() {
-        return configSettings;
+    public SettingsManager getSettings() {
+        return settingsManager;
     }
 
     public ISlimeAdapter getSlimeAdapter() {
@@ -111,6 +113,10 @@ public final class SlimeWorldModule extends PluginModule {
 
     public SuperiorSkyblock getPlugin() {
         return plugin;
+    }
+
+    public static SlimeWorldModule getModule() {
+        return instance;
     }
 
     private void loadAdapter() {
@@ -138,7 +144,7 @@ public final class SlimeWorldModule extends PluginModule {
 
             for (Constructor<?> constructor : clazz.getConstructors()) {
                 if (constructor.getParameterCount() == 2 && (constructor.getParameterTypes()[0].equals(SuperiorSkyblock.class) && constructor.getParameterTypes()[1].equals(String.class))) {
-                    return (ISlimeAdapter) constructor.newInstance(this.plugin, configSettings.getDataSource());
+                    return (ISlimeAdapter) constructor.newInstance(this.plugin, settingsManager.dataSource);
                 }
             }
 
