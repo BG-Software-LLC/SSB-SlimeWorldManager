@@ -24,8 +24,8 @@ public class SettingsManager {
             error.printStackTrace();
         }
 
-        this.dataSource = config.getString("data_source");
-        this.unloadDelay = config.getInt("unload_delay");
+        this.dataSource = config.getString("data-source");
+        this.unloadDelay = config.getInt("unload-delay");
     }
 
 }
