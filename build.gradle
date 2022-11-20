@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'SSB-SlimeWorldManager'
-version = "1.0.1"
+version = "2.0.0"
 
 allprojects {
     apply plugin: 'java'
@@ -38,7 +38,17 @@ allprojects {
         compileOnly "org.spigotmc:v1_8_R3-Taco:latest"
     }
 
+    task checkDebug() {
+        Set<File> filesWithDebug = fileTree('src/main/java').filter { file ->
+            file.text.contains('Bukkit.broadcastMessage')
+        }.getFiles()
+
+        if (!filesWithDebug.isEmpty())
+            throw new GradleException("Found debug messages: " + filesWithDebug)
+    }
+
     build {
+        dependsOn checkDebug
         dependsOn shadowJar
     }
 }
@@ -83,9 +93,6 @@ processResources {
 shadowJar {
     dependsOn(jar)
 
-    relocate 'com.zaxxer.hikari', 'com.bgsoftware.superiorskyblock.libs.hikari'
-    relocate 'org.bstats', 'com.bgsoftware.superiorskyblock.libs.bstats'
-
     if (System.getenv("BUILD_NUMBER") == null) {
         archiveName = rootProject.name + "-" + version + ".jar"
     } else {
@@ -101,19 +108,12 @@ shadowJar {
     configurations = [project.configurations.getByName("runtimeClasspath")]
 }
 
-task copyAPI(type: Copy) {
-    from './archive/API.jar'
-    into './target/'
-    rename('API.jar', rootProject.name + 'API.jar')
-}
-
 clean {
     delete file('./archive/')
 }
 
 build {
     dependsOn shadowJar
-    dependsOn copyAPI
     dependsOn clean
 }
 
