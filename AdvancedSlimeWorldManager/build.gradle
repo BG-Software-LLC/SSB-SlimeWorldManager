@@ -6,12 +6,7 @@ java {
     }
 }
 
-repositories {
-    maven { url 'https://repo.rapture.pw/repository/maven-releases/' }
-    maven { url 'https://repo.rapture.pw/repository/maven-snapshots/' }
-}
-
 dependencies {
-    compileOnly "com.grinderwolf:slimeworldmanager-api:2.10.0-SNAPSHOT"
+    compileOnly "com.grinderwolf:slimeworldmanager-api:2.10.0"
     compileOnly parent
 }
