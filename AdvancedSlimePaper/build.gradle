@@ -6,13 +6,7 @@ java {
     }
 }
 
-repositories {
-    mavenCentral()
-    maven { url 'https://repo.infernalsuite.com/repository/maven-snapshots/' }
-    maven { url 'https://repo.rapture.pw/repository/maven-releases/' }
-}
-
 dependencies {
-    compileOnly 'com.infernalsuite.aswm:api:1.19.4-R0.1-SNAPSHOT'
+    compileOnly 'com.infernalsuite:AdvancedSlimePaper:1.19.4-R0.1'
     compileOnly parent
 }
