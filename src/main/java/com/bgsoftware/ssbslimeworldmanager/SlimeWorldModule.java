@@ -121,10 +121,15 @@ public class SlimeWorldModule extends PluginModule {
 
     private void loadAdapter() {
         try {
-            Class.forName("com.grinderwolf.swm.nms.world.AbstractSlimeNMSWorld");
-            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm.SWMAdapter");
-        } catch (Throwable error) {
-            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
+            Class.forName("com.infernalsuite.aswm.api.SlimePlugin");
+            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp.SWMAdapter");
+        } catch (Throwable ignored) {
+            try {
+                Class.forName("com.grinderwolf.swm.nms.world.AbstractSlimeNMSWorld");
+                slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm.SWMAdapter");
+            } catch (Throwable error) {
+                slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
+            }
         }
     }
 
