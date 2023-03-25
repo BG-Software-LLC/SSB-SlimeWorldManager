@@ -1,4 +1,5 @@
 rootProject.name = 'SSBSlimeWorldManager'
+include 'AdvancedSlimePaper'
 include 'AdvancedSlimeWorldManager'
 include 'SlimeWorldManager'
 
