@@ -16,8 +16,6 @@ allprojects {
         maven { url 'https://repo.bg-software.com/repository/api/' }
         maven { url 'https://repo.bg-software.com/repository/common/' }
         maven { url 'https://repo.bg-software.com/repository/dependencies/' }
-        maven { url 'https://repo.infernalsuite.com/repository/maven-snapshots/' }
-        maven { url 'https://repo.rapture.pw/repository/maven-releases/' }
     }
 
     dependencies {
