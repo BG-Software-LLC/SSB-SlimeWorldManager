@@ -10,6 +10,7 @@ import com.bgsoftware.superiorskyblock.api.world.WorldInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.event.world.WorldLoadEvent;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -122,10 +123,12 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         // We load the world synchronized as we need it right now.
         ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
 
+        final World world = Bukkit.getWorld(slimeWorld.getName());
         this.module.getSlimeAdapter().generateWorld(slimeWorld);
+        Bukkit.getPluginManager().callEvent(new WorldLoadEvent(world));
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
 
-        return Bukkit.getWorld(slimeWorld.getName());
+        return world;
     }
 
     public CompletableFuture<World> getSlimeWorldAsBukkitAsync(UUID islandUUID, World.Environment environment) {
@@ -145,7 +148,9 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
                 // Generating the world synchronized
                 this.module.getSlimeAdapter().generateWorld(slimeWorld);
-                result.complete(Bukkit.getWorld(worldName));
+                final World world = Bukkit.getWorld(worldName);
+                Bukkit.getPluginManager().callEvent(new WorldLoadEvent(world));
+                result.complete(world);
                 WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             });
         });
