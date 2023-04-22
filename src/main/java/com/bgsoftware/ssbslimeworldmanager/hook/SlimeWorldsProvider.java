@@ -10,6 +10,7 @@ import com.bgsoftware.superiorskyblock.api.world.WorldInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.event.world.WorldLoadEvent;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -42,6 +43,7 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
     public Location getNextLocation(Location previousLocation, int islandsHeight, int maxIslandSize, UUID islandOwner, UUID islandUUID) {
         // The world should be loaded by now.
         World islandWorld = getSlimeWorldAsBukkit(islandUUID, module.getPlugin().getSettings().getWorlds().getDefaultWorld());
+        Bukkit.getServer().getPluginManager().callEvent(new WorldLoadEvent(islandWorld));
         return new Location(islandWorld, 0, islandsHeight, 0);
     }
 
