@@ -10,6 +10,7 @@ import com.bgsoftware.superiorskyblock.api.wrappers.BlockPosition;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
+import org.bukkit.event.world.WorldLoadEvent;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -48,6 +49,8 @@ public class SlimeWorldsCreationAlgorithm implements IslandCreationAlgorithm {
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
                 // Generating the world synchronized
                 this.module.getSlimeAdapter().generateWorld(slimeWorld);
+
+                Bukkit.getPluginManager().callEvent(new WorldLoadEvent(Bukkit.getWorld(slimeWorld.getName())));
 
                 // We run the original logic now
                 originalAlgorithm.createIsland(builder, blockPosition).whenComplete((result, error) -> {
