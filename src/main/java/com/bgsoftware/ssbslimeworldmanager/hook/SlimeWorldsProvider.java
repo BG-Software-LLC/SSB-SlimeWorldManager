@@ -1,9 +1,9 @@
 package com.bgsoftware.ssbslimeworldmanager.hook;
 
-import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
-import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
+import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
+import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.hooks.LazyWorldsProvider;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.world.WorldInfo;
@@ -12,11 +12,14 @@ import org.bukkit.Location;
 import org.bukkit.World;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class SlimeWorldsProvider implements LazyWorldsProvider {
 
+    private final Map<String, CompletableFuture<World>> pendingWorldRequests = new HashMap<>();
     private final SlimeWorldModule module;
 
     public SlimeWorldsProvider(SlimeWorldModule module) {
@@ -125,7 +128,13 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         this.module.getSlimeAdapter().generateWorld(slimeWorld);
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
 
-        return Bukkit.getWorld(slimeWorld.getName());
+        World result = Bukkit.getWorld(slimeWorld.getName());
+
+        CompletableFuture<World> pendingRequest = pendingWorldRequests.remove(worldName);
+        if (pendingRequest != null)
+            pendingRequest.complete(result);
+
+        return result;
     }
 
     public CompletableFuture<World> getSlimeWorldAsBukkitAsync(UUID islandUUID, World.Environment environment) {
@@ -137,7 +146,12 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             return CompletableFuture.completedFuture(bukkitWorld);
         }
 
+        CompletableFuture<World> pendingRequest = pendingWorldRequests.get(worldName);
+        if (pendingRequest != null)
+            return pendingRequest;
+
         CompletableFuture<World> result = new CompletableFuture<>();
+        pendingWorldRequests.put(worldName, result);
 
         Bukkit.getScheduler().runTaskAsynchronously(module.getPlugin(), () -> {
             // Loading the world asynchronous.
@@ -145,6 +159,7 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
                 // Generating the world synchronized
                 this.module.getSlimeAdapter().generateWorld(slimeWorld);
+                pendingWorldRequests.remove(worldName);
                 result.complete(Bukkit.getWorld(worldName));
                 WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             });
