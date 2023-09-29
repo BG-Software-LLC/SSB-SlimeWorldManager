@@ -122,19 +122,18 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             return bukkitWorld;
         }
 
+        CompletableFuture<World> pendingRequest = pendingWorldRequests.remove(worldName);
+        if (pendingRequest != null) {
+            return pendingRequest.join();
+        }
+
         // We load the world synchronized as we need it right now.
         ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
 
         this.module.getSlimeAdapter().generateWorld(slimeWorld);
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
 
-        World result = Bukkit.getWorld(slimeWorld.getName());
-
-        CompletableFuture<World> pendingRequest = pendingWorldRequests.remove(worldName);
-        if (pendingRequest != null)
-            pendingRequest.complete(result);
-
-        return result;
+        return Bukkit.getWorld(slimeWorld.getName());
     }
 
     public CompletableFuture<World> getSlimeWorldAsBukkitAsync(UUID islandUUID, World.Environment environment) {
