@@ -133,10 +133,7 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
 
         // We load the world synchronized as we need it right now.
         ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
-
-        World bukkitWorld = Bukkit.getWorld(slimeWorld.getName());
-
-        generateWorld(slimeWorld, bukkitWorld);
+        World bukkitWorld = generateWorld(slimeWorld);
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
 
         return bukkitWorld;
@@ -166,9 +163,7 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
                 // Generating the world synchronized
-                World bukkitWorld = Bukkit.getWorld(worldName);
-
-                generateWorld(slimeWorld, bukkitWorld);
+                World bukkitWorld = generateWorld(slimeWorld);
                 pendingWorldRequests.remove(worldName);
                 result.complete(bukkitWorld);
                 WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
@@ -178,9 +173,11 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         return result;
     }
 
-    private void generateWorld(ISlimeWorld slimeWorld, World bukkitWorld) {
+    private World generateWorld(ISlimeWorld slimeWorld) {
         this.module.getSlimeAdapter().generateWorld(slimeWorld);
+        World bukkitWorld = Bukkit.getWorld(slimeWorld.getName());
         Bukkit.getPluginManager().callEvent(new WorldLoadEvent(bukkitWorld));
+        return bukkitWorld;
     }
 
     private boolean isEnvironmentEnabled(World.Environment environment) {
