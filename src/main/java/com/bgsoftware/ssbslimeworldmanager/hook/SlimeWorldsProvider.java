@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class SlimeWorldsProvider implements LazyWorldsProvider {
 
-    private final Map<String, CompletableFuture<World>> pendingWorldRequests = new HashMap<>();
+    private final Map<String, PendingWorldLoadRequest> pendingWorldRequests = new HashMap<>();
     private final SlimeWorldModule module;
 
     public SlimeWorldsProvider(SlimeWorldModule module) {
@@ -126,15 +126,21 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             }
         }
 
-        CompletableFuture<World> pendingRequest = pendingWorldRequests.remove(worldName);
+        PendingWorldLoadRequest pendingRequest = pendingWorldRequests.remove(worldName);
         if (pendingRequest != null) {
-            return pendingRequest.join();
+            synchronized (pendingRequest.mutex) {
+                pendingRequest.isStopped = true;
+            }
         }
 
         // We load the world synchronized as we need it right now.
         ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
         World bukkitWorld = generateWorld(slimeWorld);
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
+
+        if (pendingRequest != null) {
+            pendingRequest.complete(bukkitWorld);
+        }
 
         return bukkitWorld;
     }
@@ -151,16 +157,23 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             }
         }
 
-        CompletableFuture<World> pendingRequest = pendingWorldRequests.get(worldName);
+        PendingWorldLoadRequest pendingRequest = pendingWorldRequests.get(worldName);
         if (pendingRequest != null)
             return pendingRequest;
 
-        CompletableFuture<World> result = new CompletableFuture<>();
+        PendingWorldLoadRequest result = new PendingWorldLoadRequest();
         pendingWorldRequests.put(worldName, result);
 
         Bukkit.getScheduler().runTaskAsynchronously(module.getPlugin(), () -> {
-            // Loading the world asynchronous.
-            ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
+            ISlimeWorld slimeWorld;
+            synchronized (result.mutex) {
+                if (result.isStopped)
+                    return;
+
+                // Loading the world asynchronous.
+                slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
+            }
+
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
                 // Generating the world synchronized
                 World bukkitWorld = generateWorld(slimeWorld);
@@ -191,6 +204,13 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             default:
                 return false;
         }
+    }
+
+    private static class PendingWorldLoadRequest extends CompletableFuture<World> {
+
+        private final Object mutex = new Object();
+        private boolean isStopped = false;
+
     }
 
 }
