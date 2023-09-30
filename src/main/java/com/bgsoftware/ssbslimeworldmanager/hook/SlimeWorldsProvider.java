@@ -130,12 +130,18 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         if (pendingRequest != null) {
             synchronized (pendingRequest.mutex) {
                 pendingRequest.isStopped = true;
+                return getSlimeWorldAsBukkitLocked(worldName, environment, pendingRequest);
             }
         }
 
+        return getSlimeWorldAsBukkitLocked(worldName, environment, pendingRequest);
+    }
+
+    private World getSlimeWorldAsBukkitLocked(String worldName, World.Environment environment, @Nullable PendingWorldLoadRequest pendingRequest) {
         // We load the world synchronized as we need it right now.
         ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
         World bukkitWorld = generateWorld(slimeWorld);
+
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
 
         if (pendingRequest != null) {
@@ -175,8 +181,14 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             }
 
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
-                // Generating the world synchronized
-                World bukkitWorld = generateWorld(slimeWorld);
+                World bukkitWorld;
+                synchronized (result.mutex) {
+                    if (result.isStopped)
+                        return;
+
+                    // Generating the world synchronized
+                    bukkitWorld = generateWorld(slimeWorld);
+                }
                 pendingWorldRequests.remove(worldName);
                 result.complete(bukkitWorld);
                 WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
