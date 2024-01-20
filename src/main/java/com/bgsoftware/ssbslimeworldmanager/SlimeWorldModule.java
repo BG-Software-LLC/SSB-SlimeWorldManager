@@ -18,6 +18,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.Objects;
 
 public class SlimeWorldModule extends PluginModule {
 
@@ -26,6 +27,7 @@ public class SlimeWorldModule extends PluginModule {
     private SuperiorSkyblock plugin;
     private SettingsManager settingsManager;
 
+    @Nullable
     private ISlimeAdapter slimeAdapter;
     private SlimeWorldsProvider slimeWorldsProvider;
 
@@ -60,6 +62,9 @@ public class SlimeWorldModule extends PluginModule {
 
     @Override
     public void onDisable(SuperiorSkyblock plugin) {
+        if (slimeAdapter == null)
+            return;
+
         List<String> worlds;
 
         try {
@@ -104,7 +109,7 @@ public class SlimeWorldModule extends PluginModule {
     }
 
     public ISlimeAdapter getSlimeAdapter() {
-        return slimeAdapter;
+        return Objects.requireNonNull(slimeAdapter);
     }
 
     public SlimeWorldsProvider getSlimeWorldsProvider() {
