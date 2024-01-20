@@ -40,14 +40,10 @@ public class SlimeWorldModule extends PluginModule {
     public void onEnable(SuperiorSkyblock plugin) {
         this.plugin = plugin;
 
-        if (!Bukkit.getPluginManager().isPluginEnabled("SlimeWorldManager"))
-            throw new RuntimeException("SlimeWorldManager must be installed in order to use this module.");
-
         this.settingsManager = new SettingsManager(this);
 
-        loadAdapter();
-
-        if (slimeAdapter == null)
+        this.slimeAdapter = loadAdapter();
+        if (this.slimeAdapter == null)
             throw new RuntimeException("Could not find SWM/ASWM adapter. Ensure that your data source is correct in the config.yml for SlimeWorldIslands.");
 
         loadWorldsProvider();
@@ -124,7 +120,9 @@ public class SlimeWorldModule extends PluginModule {
         return instance;
     }
 
-    private void loadAdapter() {
+    private ISlimeAdapter loadAdapter() {
+        ISlimeAdapter slimeAdapter;
+
         try {
             Class.forName("com.infernalsuite.aswm.api.SlimePlugin");
             slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp.SWMAdapter");
@@ -136,6 +134,8 @@ public class SlimeWorldModule extends PluginModule {
                 slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
             }
         }
+
+        return slimeAdapter;
     }
 
     private void loadWorldsProvider() {
