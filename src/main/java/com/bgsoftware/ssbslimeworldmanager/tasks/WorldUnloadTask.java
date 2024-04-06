@@ -63,6 +63,11 @@ public class WorldUnloadTask extends BukkitRunnable {
             return;
         }
 
+        if (!world.getPlayers().isEmpty()) {
+            updateTimeUntilNextUnload();
+            return;
+        }
+
         SlimeUtils.saveAndUnloadWorld(world);
     }
 
