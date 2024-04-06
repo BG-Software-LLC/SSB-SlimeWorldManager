@@ -56,18 +56,7 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     @Override
     public void prepareTeleport(Island island, Location location, Runnable finishCallback) {
-        if (island.isSpawn()) {
-            finishCallback.run();
-            return;
-        }
-
-        getSlimeWorldAsBukkitAsync(island.getUniqueId(), location.getWorld().getEnvironment()).whenComplete((world, error) -> {
-            if (error != null) {
-                error.printStackTrace();
-            } else {
-                finishCallback.run();
-            }
-        });
+        prepareWorld(island, location.getWorld().getEnvironment(), finishCallback);
     }
 
     @Override
@@ -112,6 +101,21 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         World.Environment environment = SlimeUtils.getEnvironment(worldName);
         if (environment == null) return null;
         return WorldInfo.of(worldName, environment);
+    }
+
+    public void prepareWorld(Island island, World.Environment environment, Runnable finishCallback) {
+        if (island.isSpawn()) {
+            finishCallback.run();
+            return;
+        }
+
+        getSlimeWorldAsBukkitAsync(island.getUniqueId(), environment).whenComplete((world, error) -> {
+            if (error != null) {
+                error.printStackTrace();
+            } else {
+                finishCallback.run();
+            }
+        });
     }
 
     public World getSlimeWorldAsBukkit(UUID islandUUID, World.Environment environment) {
