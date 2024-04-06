@@ -25,7 +25,7 @@ public class IslandsListener implements Listener {
         Bukkit.getScheduler().runTaskLater(module.getPlugin(), () -> {
             // We want to delete the worlds one tick later, so the plugin will not try and load the worlds again
             for (World.Environment environment : World.Environment.values()) {
-                if (isWorldEnabledForIsland(event.getIsland(), environment))
+                if (isWorldGeneratedForIsland(event.getIsland(), environment))
                     module.getSlimeAdapter().deleteWorld(event.getIsland(), environment);
             }
         }, 1L);
@@ -44,7 +44,7 @@ public class IslandsListener implements Listener {
 
             // We want to load the worlds of the player's island.
             for (World.Environment environment : World.Environment.values()) {
-                if (isWorldEnabledForIsland(island, environment))
+                if (isWorldGeneratedForIsland(island, environment))
                     module.getSlimeWorldsProvider().getSlimeWorldAsBukkitAsync(island.getUniqueId(), environment).whenComplete((world, error) -> {
                         if (teleportToIsland)
                             superiorPlayer.teleport(island);
@@ -57,7 +57,10 @@ public class IslandsListener implements Listener {
         }
     }
 
-    private static boolean isWorldEnabledForIsland(Island island, World.Environment environment) {
+    private static boolean isWorldGeneratedForIsland(Island island, World.Environment environment) {
+        if (!island.wasSchematicGenerated(environment))
+            return false;
+
         switch (environment) {
             case NORMAL:
                 return island.isNormalEnabled();
