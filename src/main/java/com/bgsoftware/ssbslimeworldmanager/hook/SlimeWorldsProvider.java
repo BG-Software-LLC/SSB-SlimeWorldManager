@@ -1,22 +1,26 @@
 package com.bgsoftware.ssbslimeworldmanager.hook;
 
-import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
-import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
+import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
+import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.hooks.LazyWorldsProvider;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.world.WorldInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.event.world.WorldLoadEvent;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class SlimeWorldsProvider implements LazyWorldsProvider {
 
+    private final Map<String, PendingWorldLoadRequest> pendingWorldRequests = new HashMap<>();
     private final SlimeWorldModule module;
 
     public SlimeWorldsProvider(SlimeWorldModule module) {
@@ -52,18 +56,7 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     @Override
     public void prepareTeleport(Island island, Location location, Runnable finishCallback) {
-        if (island.isSpawn()) {
-            finishCallback.run();
-            return;
-        }
-
-        getSlimeWorldAsBukkitAsync(island.getUniqueId(), location.getWorld().getEnvironment()).whenComplete((world, error) -> {
-            if (error != null) {
-                error.printStackTrace();
-            } else {
-                finishCallback.run();
-            }
-        });
+        prepareWorld(island, location.getWorld().getEnvironment(), finishCallback);
     }
 
     @Override
@@ -110,47 +103,110 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         return WorldInfo.of(worldName, environment);
     }
 
-    public World getSlimeWorldAsBukkit(UUID islandUUID, World.Environment environment) {
-        String worldName = SlimeUtils.getWorldName(islandUUID, environment);
-        World bukkitWorld = Bukkit.getWorld(worldName);
-
-        if (bukkitWorld != null) {
-            WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
-            return bukkitWorld;
+    public void prepareWorld(Island island, World.Environment environment, Runnable finishCallback) {
+        if (island.isSpawn()) {
+            finishCallback.run();
+            return;
         }
 
+        getSlimeWorldAsBukkitAsync(island.getUniqueId(), environment).whenComplete((world, error) -> {
+            if (error != null) {
+                error.printStackTrace();
+            } else {
+                finishCallback.run();
+            }
+        });
+    }
+
+    public World getSlimeWorldAsBukkit(UUID islandUUID, World.Environment environment) {
+        String worldName = SlimeUtils.getWorldName(islandUUID, environment);
+
+        {
+            World bukkitWorld = Bukkit.getWorld(worldName);
+
+            if (bukkitWorld != null) {
+                WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
+                return bukkitWorld;
+            }
+        }
+
+        PendingWorldLoadRequest pendingRequest = pendingWorldRequests.remove(worldName);
+        if (pendingRequest != null) {
+            synchronized (pendingRequest.mutex) {
+                pendingRequest.isStopped = true;
+                return getSlimeWorldAsBukkitLocked(worldName, environment, pendingRequest);
+            }
+        }
+
+        return getSlimeWorldAsBukkitLocked(worldName, environment, pendingRequest);
+    }
+
+    private World getSlimeWorldAsBukkitLocked(String worldName, World.Environment environment, @Nullable PendingWorldLoadRequest pendingRequest) {
         // We load the world synchronized as we need it right now.
         ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
+        World bukkitWorld = generateWorld(slimeWorld);
 
-        this.module.getSlimeAdapter().generateWorld(slimeWorld);
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
 
-        return Bukkit.getWorld(slimeWorld.getName());
+        if (pendingRequest != null) {
+            pendingRequest.complete(bukkitWorld);
+        }
+
+        return bukkitWorld;
     }
 
     public CompletableFuture<World> getSlimeWorldAsBukkitAsync(UUID islandUUID, World.Environment environment) {
         String worldName = SlimeUtils.getWorldName(islandUUID, environment);
-        World bukkitWorld = Bukkit.getWorld(worldName);
 
-        if (bukkitWorld != null) {
-            WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
-            return CompletableFuture.completedFuture(bukkitWorld);
+        {
+            World bukkitWorld = Bukkit.getWorld(worldName);
+
+            if (bukkitWorld != null) {
+                WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
+                return CompletableFuture.completedFuture(bukkitWorld);
+            }
         }
 
-        CompletableFuture<World> result = new CompletableFuture<>();
+        PendingWorldLoadRequest pendingRequest = pendingWorldRequests.get(worldName);
+        if (pendingRequest != null)
+            return pendingRequest;
+
+        PendingWorldLoadRequest result = new PendingWorldLoadRequest();
+        pendingWorldRequests.put(worldName, result);
 
         Bukkit.getScheduler().runTaskAsynchronously(module.getPlugin(), () -> {
-            // Loading the world asynchronous.
-            ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
+            ISlimeWorld slimeWorld;
+            synchronized (result.mutex) {
+                if (result.isStopped)
+                    return;
+
+                // Loading the world asynchronous.
+                slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
+            }
+
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
-                // Generating the world synchronized
-                this.module.getSlimeAdapter().generateWorld(slimeWorld);
-                result.complete(Bukkit.getWorld(worldName));
+                World bukkitWorld;
+                synchronized (result.mutex) {
+                    if (result.isStopped)
+                        return;
+
+                    // Generating the world synchronized
+                    bukkitWorld = generateWorld(slimeWorld);
+                }
+                pendingWorldRequests.remove(worldName);
+                result.complete(bukkitWorld);
                 WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             });
         });
 
         return result;
+    }
+
+    private World generateWorld(ISlimeWorld slimeWorld) {
+        this.module.getSlimeAdapter().generateWorld(slimeWorld);
+        World bukkitWorld = Bukkit.getWorld(slimeWorld.getName());
+        Bukkit.getPluginManager().callEvent(new WorldLoadEvent(bukkitWorld));
+        return bukkitWorld;
     }
 
     private boolean isEnvironmentEnabled(World.Environment environment) {
@@ -164,6 +220,13 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
             default:
                 return false;
         }
+    }
+
+    private static class PendingWorldLoadRequest extends CompletableFuture<World> {
+
+        private final Object mutex = new Object();
+        private boolean isStopped = false;
+
     }
 
 }

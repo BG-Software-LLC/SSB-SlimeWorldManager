@@ -35,22 +35,32 @@ public class SlimeUtils {
     public static World.Environment getEnvironment(String worldName) {
         String[] nameSections = worldName.split("_");
 
-        if(nameSections.length != 3)
+        if(nameSections.length < 3)
             return null;
 
-        return World.Environment.valueOf(nameSections[2].toUpperCase(Locale.ENGLISH));
+        StringBuilder environmentName = new StringBuilder();
+        for(int i = 2; i < nameSections.length; ++i) {
+            environmentName.append("_").append(nameSections[i]);
+        }
+
+        return World.Environment.valueOf(environmentName.substring(1).toUpperCase(Locale.ENGLISH));
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
     public static boolean isIslandWorldName(String worldName) {
         String[] nameSections = worldName.split("_");
 
-        if (nameSections.length != 3)
+        if (nameSections.length < 3)
             return false;
+
+        StringBuilder environmentName = new StringBuilder();
+        for(int i = 2; i < nameSections.length; ++i) {
+            environmentName.append("_").append(nameSections[i]);
+        }
 
         try {
             UUID.fromString(nameSections[1]);
-            World.Environment.valueOf(nameSections[2].toUpperCase(Locale.ENGLISH));
+            World.Environment.valueOf(environmentName.substring(1).toUpperCase(Locale.ENGLISH));
             return true;
         } catch (Exception exception) {
             return false;

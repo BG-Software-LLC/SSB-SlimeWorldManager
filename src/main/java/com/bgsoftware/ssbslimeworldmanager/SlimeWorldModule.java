@@ -18,6 +18,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.Objects;
 
 public class SlimeWorldModule extends PluginModule {
 
@@ -26,6 +27,7 @@ public class SlimeWorldModule extends PluginModule {
     private SuperiorSkyblock plugin;
     private SettingsManager settingsManager;
 
+    @Nullable
     private ISlimeAdapter slimeAdapter;
     private SlimeWorldsProvider slimeWorldsProvider;
 
@@ -38,14 +40,10 @@ public class SlimeWorldModule extends PluginModule {
     public void onEnable(SuperiorSkyblock plugin) {
         this.plugin = plugin;
 
-        if (!Bukkit.getPluginManager().isPluginEnabled("SlimeWorldManager"))
-            throw new RuntimeException("SlimeWorldManager must be installed in order to use this module.");
-
         this.settingsManager = new SettingsManager(this);
 
-        loadAdapter();
-
-        if (slimeAdapter == null)
+        this.slimeAdapter = loadAdapter();
+        if (this.slimeAdapter == null)
             throw new RuntimeException("Could not find SWM/ASWM adapter. Ensure that your data source is correct in the config.yml for SlimeWorldIslands.");
 
         loadWorldsProvider();
@@ -60,6 +58,9 @@ public class SlimeWorldModule extends PluginModule {
 
     @Override
     public void onDisable(SuperiorSkyblock plugin) {
+        if (slimeAdapter == null)
+            return;
+
         List<String> worlds;
 
         try {
@@ -104,7 +105,7 @@ public class SlimeWorldModule extends PluginModule {
     }
 
     public ISlimeAdapter getSlimeAdapter() {
-        return slimeAdapter;
+        return Objects.requireNonNull(slimeAdapter);
     }
 
     public SlimeWorldsProvider getSlimeWorldsProvider() {
@@ -119,7 +120,9 @@ public class SlimeWorldModule extends PluginModule {
         return instance;
     }
 
-    private void loadAdapter() {
+    private ISlimeAdapter loadAdapter() {
+        ISlimeAdapter slimeAdapter;
+
         try {
             Class.forName("com.infernalsuite.aswm.api.SlimePlugin");
             slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp.SWMAdapter");
@@ -131,6 +134,8 @@ public class SlimeWorldModule extends PluginModule {
                 slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
             }
         }
+
+        return slimeAdapter;
     }
 
     private void loadWorldsProvider() {

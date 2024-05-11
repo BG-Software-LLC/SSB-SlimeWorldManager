@@ -38,29 +38,25 @@ public class SlimeWorldsCreationAlgorithm implements IslandCreationAlgorithm {
         Objects.requireNonNull(schematic, "Cannot create an island from builder with invalid schematic name.");
 
         World.Environment environment = module.getPlugin().getSettings().getWorlds().getDefaultWorld();
-        String worldName = SlimeUtils.getWorldName(builder.getUniqueId(), environment);
 
-        CompletableFuture<IslandCreationResult> completableFuture = new CompletableFuture<>();
+        CompletableFuture<IslandCreationResult> result = new CompletableFuture<>();
 
-        Bukkit.getScheduler().runTaskAsynchronously(module.getPlugin(), () -> {
-            // Loading the world asynchronous.
-            ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
-            Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
-                // Generating the world synchronized
-                this.module.getSlimeAdapter().generateWorld(slimeWorld);
+        module.getSlimeWorldsProvider().getSlimeWorldAsBukkitAsync(builder.getUniqueId(), environment).whenComplete((world, error) -> {
+            if(error != null) {
+                result.completeExceptionally(error);
+                return;
+            }
 
-                // We run the original logic now
-                originalAlgorithm.createIsland(builder, blockPosition).whenComplete((result, error) -> {
-                    if (error != null) {
-                        completableFuture.completeExceptionally(error);
-                    } else {
-                        completableFuture.complete(result);
-                    }
-                });
+            originalAlgorithm.createIsland(builder, blockPosition).whenComplete((_result, _error) -> {
+                if (_error != null) {
+                    result.completeExceptionally(_error);
+                } else {
+                    result.complete(_result);
+                }
             });
         });
 
-        return completableFuture;
+        return result;
     }
 
 }

@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'SSB-SlimeWorldManager'
-version = "2023.1"
+version = "2024.1"
 
 project.ext {
     archiveFolder = file("archive/")
@@ -85,6 +85,8 @@ processResources {
 
 shadowJar {
     dependsOn(jar)
+
+    relocate 'com.bgsoftware.common', 'com.bgsoftware.superiorskyblock.libs.com.bgsoftware.common'
 
     archiveFileName = rootProject.name + "-" + rootProject.buildVersion + ".jar"
 
