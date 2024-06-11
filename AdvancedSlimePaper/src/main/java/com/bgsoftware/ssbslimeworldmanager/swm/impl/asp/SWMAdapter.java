@@ -7,7 +7,11 @@ import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.google.common.base.Preconditions;
 import com.infernalsuite.aswm.api.SlimePlugin;
-import com.infernalsuite.aswm.api.exceptions.*;
+import com.infernalsuite.aswm.api.exceptions.CorruptedWorldException;
+import com.infernalsuite.aswm.api.exceptions.NewerFormatException;
+import com.infernalsuite.aswm.api.exceptions.UnknownWorldException;
+import com.infernalsuite.aswm.api.exceptions.WorldAlreadyExistsException;
+import com.infernalsuite.aswm.api.exceptions.WorldLockedException;
 import com.infernalsuite.aswm.api.loaders.SlimeLoader;
 import com.infernalsuite.aswm.api.world.properties.SlimeProperties;
 import com.infernalsuite.aswm.api.world.properties.SlimePropertyMap;
@@ -28,7 +32,9 @@ public class SWMAdapter implements ISlimeAdapter {
     public SWMAdapter(SuperiorSkyblock plugin, String dataSource) {
         this.plugin = plugin;
         this.slimePlugin = (SlimePlugin) Bukkit.getPluginManager().getPlugin("SlimeWorldManager");
+        Preconditions.checkState(this.slimePlugin != null, "SlimeWorldManager plugin does not exist");
         this.slimeLoader = this.slimePlugin.getLoader(dataSource);
+        Preconditions.checkState(this.slimeLoader != null, "Invalid data source: " + dataSource);
     }
 
     @Override

@@ -1,13 +1,17 @@
 package com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm;
 
-import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeAdapter;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
+import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.google.common.base.Preconditions;
 import com.grinderwolf.swm.api.SlimePlugin;
-import com.grinderwolf.swm.api.exceptions.*;
+import com.grinderwolf.swm.api.exceptions.CorruptedWorldException;
+import com.grinderwolf.swm.api.exceptions.NewerFormatException;
+import com.grinderwolf.swm.api.exceptions.UnknownWorldException;
+import com.grinderwolf.swm.api.exceptions.WorldAlreadyExistsException;
+import com.grinderwolf.swm.api.exceptions.WorldInUseException;
 import com.grinderwolf.swm.api.loaders.SlimeLoader;
 import com.grinderwolf.swm.api.world.properties.SlimeProperties;
 import com.grinderwolf.swm.api.world.properties.SlimePropertyMap;
@@ -28,7 +32,9 @@ public class SWMAdapter implements ISlimeAdapter {
     public SWMAdapter(SuperiorSkyblock plugin, String dataSource) {
         this.plugin = plugin;
         this.slimePlugin = (SlimePlugin) Bukkit.getPluginManager().getPlugin("SlimeWorldManager");
+        Preconditions.checkState(this.slimePlugin != null, "SlimeWorldManager plugin does not exist");
         this.slimeLoader = this.slimePlugin.getLoader(dataSource);
+        Preconditions.checkState(this.slimeLoader != null, "Invalid data source: " + dataSource);
     }
 
     @Override
