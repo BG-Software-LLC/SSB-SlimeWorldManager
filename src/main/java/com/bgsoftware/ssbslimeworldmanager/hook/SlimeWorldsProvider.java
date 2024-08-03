@@ -3,9 +3,12 @@ package com.bgsoftware.ssbslimeworldmanager.hook;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
+import com.bgsoftware.ssbslimeworldmanager.utils.Dimensions;
 import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
+import com.bgsoftware.superiorskyblock.api.config.SettingsManager;
 import com.bgsoftware.superiorskyblock.api.hooks.LazyWorldsProvider;
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import com.bgsoftware.superiorskyblock.api.world.WorldInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -21,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     private final Map<String, PendingWorldLoadRequest> pendingWorldRequests = new HashMap<>();
+    private final Map<UUID, Dimension> islandWorldsToDimensions = new HashMap<>();
     private final SlimeWorldModule module;
 
     public SlimeWorldsProvider(SlimeWorldModule module) {
@@ -33,8 +37,13 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
     }
 
     @Override
+    public World getIslandsWorld(Island island, Dimension dimension) {
+        return isDimensionEnabled(dimension) ? getSlimeWorldAsBukkit(island.getUniqueId(), dimension) : null;
+    }
+
+    @Override
     public World getIslandsWorld(Island island, World.Environment environment) {
-        return isEnvironmentEnabled(environment) ? getSlimeWorldAsBukkit(island.getUniqueId(), environment) : null;
+        return getIslandsWorld(island, Dimension.getByName(environment.name()));
     }
 
     @Override
@@ -45,7 +54,8 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
     @Override
     public Location getNextLocation(Location previousLocation, int islandsHeight, int maxIslandSize, UUID islandOwner, UUID islandUUID) {
         // The world should be loaded by now.
-        World islandWorld = getSlimeWorldAsBukkit(islandUUID, module.getPlugin().getSettings().getWorlds().getDefaultWorld());
+        World islandWorld = getSlimeWorldAsBukkit(islandUUID,
+                module.getPlugin().getSettings().getWorlds().getDefaultWorldDimension());
         return new Location(islandWorld, 0, islandsHeight, 0);
     }
 
@@ -56,43 +66,64 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     @Override
     public void prepareTeleport(Island island, Location location, Runnable finishCallback) {
-        prepareWorld(island, location.getWorld().getEnvironment(), finishCallback);
+        prepareWorld(island, getIslandsWorldDimension(location.getWorld()), finishCallback);
     }
 
     @Override
     public boolean isNormalEnabled() {
-        return module.getPlugin().getSettings().getWorlds().getNormal().isEnabled();
+        return isDimensionEnabled(Dimensions.NORMAL);
     }
 
     @Override
     public boolean isNormalUnlocked() {
-        return isNormalEnabled() && module.getPlugin().getSettings().getWorlds().getNormal().isUnlocked();
+        return isDimensionUnlocked(Dimensions.NORMAL);
     }
 
     @Override
     public boolean isNetherEnabled() {
-        return module.getPlugin().getSettings().getWorlds().getNether().isEnabled();
+        return isDimensionEnabled(Dimensions.NETHER);
     }
 
     @Override
     public boolean isNetherUnlocked() {
-        return isNetherEnabled() && module.getPlugin().getSettings().getWorlds().getNether().isUnlocked();
+        return isDimensionUnlocked(Dimensions.NETHER);
     }
 
     @Override
     public boolean isEndEnabled() {
-        return module.getPlugin().getSettings().getWorlds().getEnd().isEnabled();
+        return isDimensionEnabled(Dimensions.THE_END);
     }
 
     @Override
     public boolean isEndUnlocked() {
-        return isEndEnabled() && module.getPlugin().getSettings().getWorlds().getEnd().isUnlocked();
+        return isDimensionUnlocked(Dimensions.THE_END);
+    }
+
+    @Override
+    public boolean isDimensionEnabled(Dimension dimension) {
+        SettingsManager.Worlds.DimensionConfig dimensionConfig =
+                module.getPlugin().getSettings().getWorlds().getDimensionConfig(dimension);
+        // If the config is null, it probably means another plugin registered it.
+        // Therefore, we register it as enabled.
+        return dimensionConfig == null || dimensionConfig.isEnabled();
+    }
+
+    @Override
+    public boolean isDimensionUnlocked(Dimension dimension) {
+        SettingsManager.Worlds.DimensionConfig dimensionConfig =
+                module.getPlugin().getSettings().getWorlds().getDimensionConfig(dimension);
+        return dimensionConfig != null && dimensionConfig.isUnlocked();
     }
 
     @Nullable
     @Override
-    public WorldInfo getIslandsWorldInfo(Island island, World.Environment environment) {
-        return WorldInfo.of(SlimeUtils.getWorldName(island.getUniqueId(), environment), environment);
+    public WorldInfo getIslandsWorldInfo(Island island, Dimension dimension) {
+        return WorldInfo.of(SlimeUtils.getWorldName(island.getUniqueId(), dimension), dimension);
+    }
+
+    @Override
+    public Dimension getIslandsWorldDimension(World world) {
+        return islandWorldsToDimensions.get(world.getUID());
     }
 
     @Nullable
@@ -103,13 +134,14 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         return WorldInfo.of(worldName, environment);
     }
 
-    public void prepareWorld(Island island, World.Environment environment, Runnable finishCallback) {
+    @Override
+    public void prepareWorld(Island island, Dimension dimension, Runnable finishCallback) {
         if (island.isSpawn()) {
             finishCallback.run();
             return;
         }
 
-        getSlimeWorldAsBukkitAsync(island.getUniqueId(), environment).whenComplete((world, error) -> {
+        getSlimeWorldAsBukkitAsync(island.getUniqueId(), dimension).whenComplete((world, error) -> {
             if (error != null) {
                 error.printStackTrace();
             } else {
@@ -118,8 +150,8 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         });
     }
 
-    public World getSlimeWorldAsBukkit(UUID islandUUID, World.Environment environment) {
-        String worldName = SlimeUtils.getWorldName(islandUUID, environment);
+    public World getSlimeWorldAsBukkit(UUID islandUUID, Dimension dimension) {
+        String worldName = SlimeUtils.getWorldName(islandUUID, dimension);
 
         {
             World bukkitWorld = Bukkit.getWorld(worldName);
@@ -134,19 +166,21 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         if (pendingRequest != null) {
             synchronized (pendingRequest.mutex) {
                 pendingRequest.isStopped = true;
-                return getSlimeWorldAsBukkitLocked(worldName, environment, pendingRequest);
+                return getSlimeWorldAsBukkitLocked(worldName, dimension, pendingRequest);
             }
         }
 
-        return getSlimeWorldAsBukkitLocked(worldName, environment, pendingRequest);
+        return getSlimeWorldAsBukkitLocked(worldName, dimension, pendingRequest);
     }
 
-    private World getSlimeWorldAsBukkitLocked(String worldName, World.Environment environment, @Nullable PendingWorldLoadRequest pendingRequest) {
+    private World getSlimeWorldAsBukkitLocked(String worldName, Dimension dimension, @Nullable PendingWorldLoadRequest pendingRequest) {
         // We load the world synchronized as we need it right now.
-        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
+        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, dimension.getEnvironment());
         World bukkitWorld = generateWorld(slimeWorld);
 
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
+
+        islandWorldsToDimensions.put(bukkitWorld.getUID(), dimension);
 
         if (pendingRequest != null) {
             pendingRequest.complete(bukkitWorld);
@@ -155,8 +189,8 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         return bukkitWorld;
     }
 
-    public CompletableFuture<World> getSlimeWorldAsBukkitAsync(UUID islandUUID, World.Environment environment) {
-        String worldName = SlimeUtils.getWorldName(islandUUID, environment);
+    public CompletableFuture<World> getSlimeWorldAsBukkitAsync(UUID islandUUID, Dimension dimension) {
+        String worldName = SlimeUtils.getWorldName(islandUUID, dimension);
 
         {
             World bukkitWorld = Bukkit.getWorld(worldName);
@@ -181,7 +215,7 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
                     return;
 
                 // Loading the world asynchronous.
-                slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, environment);
+                slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, dimension.getEnvironment());
             }
 
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
@@ -194,6 +228,9 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
                     bukkitWorld = generateWorld(slimeWorld);
                 }
                 pendingWorldRequests.remove(worldName);
+
+                islandWorldsToDimensions.put(bukkitWorld.getUID(), dimension);
+
                 result.complete(bukkitWorld);
                 WorldUnloadTask.getTask(worldName).updateTimeUntilNextUnload();
             });
@@ -207,19 +244,6 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         World bukkitWorld = Bukkit.getWorld(slimeWorld.getName());
         Bukkit.getPluginManager().callEvent(new WorldLoadEvent(bukkitWorld));
         return bukkitWorld;
-    }
-
-    private boolean isEnvironmentEnabled(World.Environment environment) {
-        switch (environment) {
-            case NORMAL:
-                return isNormalEnabled();
-            case NETHER:
-                return isNetherEnabled();
-            case THE_END:
-                return isEndEnabled();
-            default:
-                return false;
-        }
     }
 
     private static class PendingWorldLoadRequest extends CompletableFuture<World> {

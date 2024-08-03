@@ -3,10 +3,10 @@ package com.bgsoftware.ssbslimeworldmanager.listeners;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
 import com.bgsoftware.superiorskyblock.api.events.IslandDisbandEvent;
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -26,9 +26,9 @@ public class IslandsListener implements Listener {
     public void onIslandDisband(IslandDisbandEvent event) {
         Bukkit.getScheduler().runTaskLater(module.getPlugin(), () -> {
             // We want to delete the worlds one tick later, so the plugin will not try and load the worlds again
-            for (World.Environment environment : World.Environment.values()) {
-                if (isWorldGeneratedForIsland(event.getIsland(), environment))
-                    module.getSlimeAdapter().deleteWorld(event.getIsland(), environment);
+            for (Dimension dimension : Dimension.values()) {
+                if (isWorldGeneratedForIsland(event.getIsland(), dimension))
+                    module.getSlimeAdapter().deleteWorld(event.getIsland(), dimension);
             }
         }, 1L);
     }
@@ -47,14 +47,15 @@ public class IslandsListener implements Listener {
             AtomicBoolean teleportedToIsland = new AtomicBoolean(false);
 
             // We want to load the worlds of the player's island.
-            for (World.Environment environment : World.Environment.values()) {
-                if (isWorldGeneratedForIsland(island, environment))
-                    module.getSlimeWorldsProvider().getSlimeWorldAsBukkitAsync(island.getUniqueId(), environment).whenComplete((world, error) -> {
+            for (Dimension dimension : Dimension.values()) {
+                if (isWorldGeneratedForIsland(island, dimension)) {
+                    module.getSlimeWorldsProvider().getSlimeWorldAsBukkitAsync(island.getUniqueId(), dimension).whenComplete((world, error) -> {
                         if (teleportToIsland && !teleportedToIsland.get()) {
                             superiorPlayer.teleport(island);
                             teleportedToIsland.set(true);
                         }
                     });
+                }
             }
 
             // Because it takes time for the worlds to load, we teleport them to spawn in the time being.
@@ -63,20 +64,11 @@ public class IslandsListener implements Listener {
         }
     }
 
-    private static boolean isWorldGeneratedForIsland(Island island, World.Environment environment) {
-        if (!island.wasSchematicGenerated(environment))
+    private static boolean isWorldGeneratedForIsland(Island island, Dimension dimension) {
+        if (!island.wasSchematicGenerated(dimension))
             return false;
 
-        switch (environment) {
-            case NORMAL:
-                return island.isNormalEnabled();
-            case NETHER:
-                return island.isNetherEnabled();
-            case THE_END:
-                return island.isEndEnabled();
-            default:
-                return false;
-        }
+        return island.isDimensionEnabled(dimension);
     }
 
 }

@@ -1,11 +1,14 @@
 package com.bgsoftware.ssbslimeworldmanager.utils;
 
 import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
+import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
 import javax.annotation.Nullable;
-import java.util.*;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SlimeUtils {
@@ -27,19 +30,19 @@ public class SlimeUtils {
         return islandWorlds.get(worldName) != null;
     }
 
-    public static String getWorldName(UUID islandUUID, World.Environment environment) {
-        return "island_" + islandUUID + "_" + environment.name().toLowerCase();
+    public static String getWorldName(UUID islandUUID, Dimension dimension) {
+        return "island_" + islandUUID + "_" + dimension.getName().toLowerCase();
     }
 
     @Nullable
     public static World.Environment getEnvironment(String worldName) {
         String[] nameSections = worldName.split("_");
 
-        if(nameSections.length < 3)
+        if (nameSections.length < 3)
             return null;
 
         StringBuilder environmentName = new StringBuilder();
-        for(int i = 2; i < nameSections.length; ++i) {
+        for (int i = 2; i < nameSections.length; ++i) {
             environmentName.append("_").append(nameSections[i]);
         }
 
@@ -54,7 +57,7 @@ public class SlimeUtils {
             return false;
 
         StringBuilder environmentName = new StringBuilder();
-        for(int i = 2; i < nameSections.length; ++i) {
+        for (int i = 2; i < nameSections.length; ++i) {
             environmentName.append("_").append(nameSections[i]);
         }
 
@@ -78,7 +81,7 @@ public class SlimeUtils {
     }
 
     public static void saveAndUnloadWorld(World world) {
-        if(world == null) return;
+        if (world == null) return;
 
         world.save();
         Bukkit.unloadWorld(world, false);

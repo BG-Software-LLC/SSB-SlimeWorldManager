@@ -1,15 +1,12 @@
 package com.bgsoftware.ssbslimeworldmanager.hook;
 
-import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
-import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.schematic.Schematic;
+import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import com.bgsoftware.superiorskyblock.api.world.algorithm.IslandCreationAlgorithm;
 import com.bgsoftware.superiorskyblock.api.wrappers.BlockPosition;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
-import org.bukkit.Bukkit;
-import org.bukkit.World;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -37,12 +34,12 @@ public class SlimeWorldsCreationAlgorithm implements IslandCreationAlgorithm {
         Schematic schematic = builder.getScehmaticName() == null ? null : module.getPlugin().getSchematics().getSchematic(builder.getScehmaticName());
         Objects.requireNonNull(schematic, "Cannot create an island from builder with invalid schematic name.");
 
-        World.Environment environment = module.getPlugin().getSettings().getWorlds().getDefaultWorld();
+        Dimension dimension = module.getPlugin().getSettings().getWorlds().getDefaultWorldDimension();
 
         CompletableFuture<IslandCreationResult> result = new CompletableFuture<>();
 
-        module.getSlimeWorldsProvider().getSlimeWorldAsBukkitAsync(builder.getUniqueId(), environment).whenComplete((world, error) -> {
-            if(error != null) {
+        module.getSlimeWorldsProvider().getSlimeWorldAsBukkitAsync(builder.getUniqueId(), dimension).whenComplete((world, error) -> {
+            if (error != null) {
                 result.completeExceptionally(error);
                 return;
             }

@@ -5,6 +5,7 @@ import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import com.google.common.base.Preconditions;
 import com.infernalsuite.aswm.api.SlimePlugin;
 import com.infernalsuite.aswm.api.exceptions.CorruptedWorldException;
@@ -77,8 +78,8 @@ public class SWMAdapter implements ISlimeAdapter {
     }
 
     @Override
-    public void deleteWorld(Island island, World.Environment environment) {
-        String worldName = SlimeUtils.getWorldName(island.getUniqueId(), environment);
+    public void deleteWorld(Island island, Dimension dimension) {
+        String worldName = SlimeUtils.getWorldName(island.getUniqueId(), dimension);
 
         if (Bukkit.unloadWorld(worldName, false)) {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {

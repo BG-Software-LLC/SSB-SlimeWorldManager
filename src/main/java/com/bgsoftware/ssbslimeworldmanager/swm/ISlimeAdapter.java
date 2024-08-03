@@ -1,6 +1,7 @@
 package com.bgsoftware.ssbslimeworldmanager.swm;
 
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import org.bukkit.World;
 
 import java.io.IOException;
@@ -14,6 +15,6 @@ public interface ISlimeAdapter {
 
     void generateWorld(ISlimeWorld slimeWorld);
 
-    void deleteWorld(Island island, World.Environment environment);
+    void deleteWorld(Island island, Dimension dimension);
 
 }
