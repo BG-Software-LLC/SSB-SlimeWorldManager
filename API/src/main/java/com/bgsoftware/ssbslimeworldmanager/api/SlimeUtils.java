@@ -1,6 +1,5 @@
-package com.bgsoftware.ssbslimeworldmanager.utils;
+package com.bgsoftware.ssbslimeworldmanager.api;
 
-import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
 import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -35,7 +34,7 @@ public class SlimeUtils {
     }
 
     @Nullable
-    public static World.Environment getEnvironment(String worldName) {
+    public static Dimension getDimension(String worldName) {
         String[] nameSections = worldName.split("_");
 
         if (nameSections.length < 3)
@@ -46,7 +45,7 @@ public class SlimeUtils {
             environmentName.append("_").append(nameSections[i]);
         }
 
-        return World.Environment.valueOf(environmentName.substring(1).toUpperCase(Locale.ENGLISH));
+        return Dimension.getByName(environmentName.substring(1).toUpperCase(Locale.ENGLISH));
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")

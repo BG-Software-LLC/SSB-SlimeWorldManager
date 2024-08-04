@@ -1,6 +1,6 @@
 package com.bgsoftware.ssbslimeworldmanager.swm.impl.swm;
 
-import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
+import com.bgsoftware.ssbslimeworldmanager.api.ISlimeWorld;
 import com.grinderwolf.swm.api.world.SlimeWorld;
 
 public class SWMSlimeWorld implements ISlimeWorld {

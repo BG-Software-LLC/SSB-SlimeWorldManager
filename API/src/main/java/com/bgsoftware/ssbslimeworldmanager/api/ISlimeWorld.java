@@ -1,4 +1,4 @@
-package com.bgsoftware.ssbslimeworldmanager.swm;
+package com.bgsoftware.ssbslimeworldmanager.api;
 
 public interface ISlimeWorld {
 

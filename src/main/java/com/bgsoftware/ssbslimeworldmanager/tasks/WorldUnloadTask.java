@@ -1,7 +1,7 @@
 package com.bgsoftware.ssbslimeworldmanager.tasks;
 
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
-import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
+import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
 import com.google.common.base.Preconditions;
 import org.bukkit.Bukkit;
 import org.bukkit.World;

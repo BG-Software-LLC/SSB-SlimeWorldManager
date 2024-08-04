@@ -1,4 +1,4 @@
-package com.bgsoftware.ssbslimeworldmanager.swm;
+package com.bgsoftware.ssbslimeworldmanager.api;
 
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.world.Dimension;

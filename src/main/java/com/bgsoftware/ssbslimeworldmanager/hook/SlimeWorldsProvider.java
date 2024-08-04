@@ -1,10 +1,10 @@
 package com.bgsoftware.ssbslimeworldmanager.hook;
 
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
-import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
+import com.bgsoftware.ssbslimeworldmanager.api.ISlimeWorld;
+import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
 import com.bgsoftware.ssbslimeworldmanager.utils.Dimensions;
-import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.config.SettingsManager;
 import com.bgsoftware.superiorskyblock.api.hooks.LazyWorldsProvider;
 import com.bgsoftware.superiorskyblock.api.island.Island;
@@ -29,6 +29,14 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     public SlimeWorldsProvider(SlimeWorldModule module) {
         this.module = module;
+        Bukkit.getScheduler().runTaskLater(module.getPlugin(), () -> {
+            Location spawnLocation = module.getPlugin().getGrid().getSpawnIsland().getCenter(Dimensions.NORMAL);
+            World spawnWorld = spawnLocation.getWorld();
+            if (spawnWorld != null) {
+                islandWorldsToDimensions.computeIfAbsent(spawnWorld.getUID(),
+                        u -> Dimension.getByName(spawnWorld.getEnvironment().name()));
+            }
+        }, 40L);
     }
 
     @Override
@@ -123,15 +131,19 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     @Override
     public Dimension getIslandsWorldDimension(World world) {
-        return islandWorldsToDimensions.get(world.getUID());
+        Dimension dimension = islandWorldsToDimensions.get(world.getUID());
+        if (dimension != null)
+            return dimension;
+        return Dimension.getByName(world.getEnvironment().name());
     }
 
     @Nullable
     @Override
     public WorldInfo getIslandsWorldInfo(Island island, String worldName) {
-        World.Environment environment = SlimeUtils.getEnvironment(worldName);
-        if (environment == null) return null;
-        return WorldInfo.of(worldName, environment);
+        Dimension dimension = SlimeUtils.getDimension(worldName);
+        if (dimension == null)
+            return null;
+        return WorldInfo.of(worldName, dimension);
     }
 
     @Override

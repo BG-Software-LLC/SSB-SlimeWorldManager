@@ -1,8 +1,8 @@
 package com.bgsoftware.ssbslimeworldmanager.swm.impl.swm;
 
-import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeAdapter;
-import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeWorld;
-import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
+import com.bgsoftware.ssbslimeworldmanager.api.ISlimeAdapter;
+import com.bgsoftware.ssbslimeworldmanager.api.ISlimeWorld;
+import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.world.Dimension;

@@ -1,11 +1,11 @@
 package com.bgsoftware.ssbslimeworldmanager;
 
+import com.bgsoftware.ssbslimeworldmanager.api.ISlimeAdapter;
+import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.config.SettingsManager;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsCreationAlgorithm;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsProvider;
 import com.bgsoftware.ssbslimeworldmanager.listeners.IslandsListener;
-import com.bgsoftware.ssbslimeworldmanager.swm.ISlimeAdapter;
-import com.bgsoftware.ssbslimeworldmanager.utils.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.commands.SuperiorCommand;
 import com.bgsoftware.superiorskyblock.api.modules.ModuleLoadTime;
@@ -124,14 +124,19 @@ public class SlimeWorldModule extends PluginModule {
         ISlimeAdapter slimeAdapter;
 
         try {
-            Class.forName("com.infernalsuite.aswm.api.SlimePlugin");
-            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp.SWMAdapter");
+            Class.forName("com.infernalsuite.aswm.api.AdvancedSlimePaperAPI");
+            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp3.SWMAdapter");
         } catch (Throwable ignored) {
             try {
-                Class.forName("com.grinderwolf.swm.nms.world.AbstractSlimeNMSWorld");
-                slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm.SWMAdapter");
-            } catch (Throwable error) {
-                slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
+                Class.forName("com.infernalsuite.aswm.api.SlimePlugin");
+                slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp.SWMAdapter");
+            } catch (Throwable ignored2) {
+                try {
+                    Class.forName("com.grinderwolf.swm.nms.world.AbstractSlimeNMSWorld");
+                    slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm.SWMAdapter");
+                } catch (Throwable ignored3) {
+                    slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
+                }
             }
         }
 

@@ -2,5 +2,6 @@ group 'SlimeWorldManager'
 
 dependencies {
     compileOnly "com.grinderwolf:slimeworldmanager-api:2.2.1"
-    compileOnly parent
+    compileOnly "org.spigotmc:v1_8_R3-Taco:latest"
+    compileOnly project(":API")
 }
