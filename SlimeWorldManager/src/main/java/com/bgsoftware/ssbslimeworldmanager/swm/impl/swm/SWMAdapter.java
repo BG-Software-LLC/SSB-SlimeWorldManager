@@ -85,7 +85,9 @@ public class SWMAdapter implements ISlimeAdapter {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
                     slimeLoader.deleteWorld(worldName);
-                } catch (UnknownWorldException | IOException exception) {
+                } catch (UnknownWorldException ignored) {
+                    // World was not saved yet, who cares.
+                } catch (IOException exception) {
                     throw new RuntimeException(exception);
                 }
             });
