@@ -11,8 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation files('C:\\Users\\Omer\\Downloads\\loaders-3.0.0-SNAPSHOT.jar')
-    compileOnly files('C:\\Users\\Omer\\Downloads\\api-3.0.0-SNAPSHOT.jar')
+    compileOnly 'com.infernalsuite:AdvancedSlimePaper:1.21-R0.1'
     compileOnly 'org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT'
     compileOnly project(":API")
 }
