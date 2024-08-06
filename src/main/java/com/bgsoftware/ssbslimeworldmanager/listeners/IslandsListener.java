@@ -12,9 +12,13 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class IslandsListener implements Listener {
+
+    private static final int MAX_ATTEMPTS_ON_WORLDS_DELETION = 10;
 
     private final SlimeWorldModule module;
 
@@ -24,13 +28,25 @@ public class IslandsListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onIslandDisband(IslandDisbandEvent event) {
+        List<Dimension> enabledDimensions = new LinkedList<>();
+        for (Dimension dimension : Dimension.values()) {
+            if (isWorldGeneratedForIsland(event.getIsland(), dimension))
+                enabledDimensions.add(dimension);
+        }
+
+        deleteWorldsForIsland(event.getIsland(), enabledDimensions, 0);
+    }
+
+    private void deleteWorldsForIsland(Island island, List<Dimension> dimensions, int attemptNumber) {
         Bukkit.getScheduler().runTaskLater(module.getPlugin(), () -> {
-            // We want to delete the worlds one tick later, so the plugin will not try and load the worlds again
-            for (Dimension dimension : Dimension.values()) {
-                if (isWorldGeneratedForIsland(event.getIsland(), dimension))
-                    module.getSlimeAdapter().deleteWorld(event.getIsland(), dimension);
+            for (Dimension dimension : dimensions) {
+                if (!module.getSlimeAdapter().deleteWorld(island, dimension)) {
+                    if (attemptNumber < MAX_ATTEMPTS_ON_WORLDS_DELETION)
+                        deleteWorldsForIsland(island, dimensions, attemptNumber + 1);
+                    return;
+                }
             }
-        }, 1L);
+        }, 5L);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

@@ -78,7 +78,7 @@ public class SWMAdapter implements ISlimeAdapter {
     }
 
     @Override
-    public void deleteWorld(Island island, Dimension dimension) {
+    public boolean deleteWorld(Island island, Dimension dimension) {
         String worldName = SlimeUtils.getWorldName(island.getUniqueId(), dimension);
 
         if (Bukkit.unloadWorld(worldName, false)) {
@@ -91,7 +91,11 @@ public class SWMAdapter implements ISlimeAdapter {
                     throw new RuntimeException(exception);
                 }
             });
+
+            return true;
         }
+
+        return false;
     }
 
 }

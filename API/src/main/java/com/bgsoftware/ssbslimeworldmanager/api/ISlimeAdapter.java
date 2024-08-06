@@ -15,6 +15,6 @@ public interface ISlimeAdapter {
 
     void generateWorld(ISlimeWorld slimeWorld);
 
-    void deleteWorld(Island island, Dimension dimension);
+    boolean deleteWorld(Island island, Dimension dimension);
 
 }
