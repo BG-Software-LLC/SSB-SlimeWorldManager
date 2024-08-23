@@ -2,12 +2,14 @@ package com.bgsoftware.ssbslimeworldmanager.api;
 
 import org.bukkit.configuration.ConfigurationSection;
 
+import java.util.Locale;
+
 public interface DataSourceParams {
 
     DataSourceType getType();
 
     static DataSourceParams parse(ConfigurationSection section) throws IllegalArgumentException {
-        DataSourceType dataSourceType = DataSourceType.valueOf(section.getString("type"));
+        DataSourceType dataSourceType = DataSourceType.valueOf(section.getString("type").toUpperCase(Locale.ENGLISH));
 
         switch (dataSourceType) {
             case API:
