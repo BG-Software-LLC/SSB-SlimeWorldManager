@@ -1,5 +1,6 @@
 package com.bgsoftware.ssbslimeworldmanager.swm.impl.swm;
 
+import com.bgsoftware.ssbslimeworldmanager.api.DataSourceParams;
 import com.bgsoftware.ssbslimeworldmanager.api.ISlimeAdapter;
 import com.bgsoftware.ssbslimeworldmanager.api.ISlimeWorld;
 import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
@@ -30,12 +31,13 @@ public class SWMAdapter implements ISlimeAdapter {
     private final SlimePlugin slimePlugin;
     private final SlimeLoader slimeLoader;
 
-    public SWMAdapter(SuperiorSkyblock plugin, String dataSource) {
+    public SWMAdapter(SuperiorSkyblock plugin, DataSourceParams dataSource) {
         this.plugin = plugin;
         this.slimePlugin = (SlimePlugin) Bukkit.getPluginManager().getPlugin("SlimeWorldManager");
         Preconditions.checkState(this.slimePlugin != null, "SlimeWorldManager plugin does not exist");
-        this.slimeLoader = this.slimePlugin.getLoader(dataSource);
-        Preconditions.checkState(this.slimeLoader != null, "Invalid data source: " + dataSource);
+        String dataSourceType = dataSource.getType().name();
+        this.slimeLoader = this.slimePlugin.getLoader(dataSourceType);
+        Preconditions.checkState(this.slimeLoader != null, "Invalid data source: " + dataSourceType);
     }
 
     @Override

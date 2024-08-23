@@ -1,7 +1,9 @@
 package com.bgsoftware.ssbslimeworldmanager.swm.impl.asp3;
 
+import com.bgsoftware.ssbslimeworldmanager.api.DataSourceParams;
 import com.bgsoftware.ssbslimeworldmanager.api.ISlimeAdapter;
 import com.bgsoftware.ssbslimeworldmanager.api.ISlimeWorld;
+import com.bgsoftware.ssbslimeworldmanager.api.SWMAdapterLoadException;
 import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.island.Island;
@@ -14,7 +16,10 @@ import com.infernalsuite.aswm.api.exceptions.UnknownWorldException;
 import com.infernalsuite.aswm.api.loaders.SlimeLoader;
 import com.infernalsuite.aswm.api.world.properties.SlimeProperties;
 import com.infernalsuite.aswm.api.world.properties.SlimePropertyMap;
+import com.infernalsuite.aswm.loaders.api.APILoader;
 import com.infernalsuite.aswm.loaders.file.FileLoader;
+import com.infernalsuite.aswm.loaders.mongo.MongoLoader;
+import com.infernalsuite.aswm.loaders.mysql.MysqlLoader;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
@@ -26,17 +31,51 @@ import java.util.logging.Level;
 
 public class SWMAdapter implements ISlimeAdapter {
 
-    private static final SlimeLoader SLIME_LOADER = new FileLoader(new File("slime_worlds"));
-
     private final SuperiorSkyblock plugin;
 
-    public SWMAdapter(SuperiorSkyblock plugin, String dataSource) {
+    private final SlimeLoader slimeLoader;
+
+    public SWMAdapter(SuperiorSkyblock plugin, DataSourceParams dataSource) throws SWMAdapterLoadException {
         this.plugin = plugin;
+        this.slimeLoader = createSlimeLoader(dataSource);
+    }
+
+    private static SlimeLoader createSlimeLoader(DataSourceParams dataSourceParams) throws SWMAdapterLoadException {
+        switch (dataSourceParams.getType()) {
+            case MYSQL: {
+                try {
+                    DataSourceParams.MySQL mysqlParams = (DataSourceParams.MySQL) dataSourceParams;
+                    return new MysqlLoader(mysqlParams.url, mysqlParams.host, mysqlParams.port, mysqlParams.database,
+                            mysqlParams.useSSL, mysqlParams.username, mysqlParams.password);
+                } catch (Throwable error) {
+                    throw new SWMAdapterLoadException("Failed to connect to MySQL", error);
+                }
+            }
+            case API: {
+                try {
+                    DataSourceParams.API apiParams = (DataSourceParams.API) dataSourceParams;
+                    return new APILoader(apiParams.uri, apiParams.username, apiParams.token,
+                            apiParams.ignoreSSLCertificate);
+                } catch (Throwable error) {
+                    throw new SWMAdapterLoadException("Failed to connect to API", error);
+                }
+            }
+            case FILE: {
+                try {
+                    DataSourceParams.File fileParams = (DataSourceParams.File) dataSourceParams;
+                    return new FileLoader(new File(fileParams.path));
+                } catch (Throwable error) {
+                    throw new SWMAdapterLoadException("Failed to find worlds folder", error);
+                }
+            }
+        }
+
+        throw new SWMAdapterLoadException("Invalid data source type: " + dataSourceParams.getType());
     }
 
     @Override
     public List<String> getSavedWorlds() throws IOException {
-        return SLIME_LOADER.listWorlds();
+        return this.slimeLoader.listWorlds();
     }
 
     @Override
@@ -47,16 +86,16 @@ public class SWMAdapter implements ISlimeAdapter {
             SlimePropertyMap properties = new SlimePropertyMap();
 
             try {
-                if (SLIME_LOADER.worldExists(worldName)) {
+                if (this.slimeLoader.worldExists(worldName)) {
                     slimeWorld = new SWMSlimeWorld(AdvancedSlimePaperAPI.instance().readWorld(
-                            SLIME_LOADER, worldName, false, properties));
+                            this.slimeLoader, worldName, false, properties));
                 } else {
                     // set the default island properties accordingly
                     properties.setValue(SlimeProperties.DIFFICULTY, plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
                     properties.setValue(SlimeProperties.ENVIRONMENT, environment.name().toLowerCase(Locale.ENGLISH));
 
                     slimeWorld = new SWMSlimeWorld(AdvancedSlimePaperAPI.instance().createEmptyWorld(
-                            worldName, false, properties, SLIME_LOADER));
+                            worldName, false, properties, this.slimeLoader));
                 }
 
                 SlimeUtils.setSlimeWorld(worldName, slimeWorld);
@@ -81,7 +120,7 @@ public class SWMAdapter implements ISlimeAdapter {
         if (Bukkit.unloadWorld(worldName, false)) {
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
                 try {
-                    SLIME_LOADER.deleteWorld(worldName);
+                    this.slimeLoader.deleteWorld(worldName);
                 } catch (UnknownWorldException ignored) {
                     // World was not saved yet, who cares.
                 } catch (IOException exception) {

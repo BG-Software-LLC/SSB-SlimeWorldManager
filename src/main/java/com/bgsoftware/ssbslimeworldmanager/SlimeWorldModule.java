@@ -1,5 +1,6 @@
 package com.bgsoftware.ssbslimeworldmanager;
 
+import com.bgsoftware.ssbslimeworldmanager.api.DataSourceParams;
 import com.bgsoftware.ssbslimeworldmanager.api.ISlimeAdapter;
 import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
 import com.bgsoftware.ssbslimeworldmanager.config.SettingsManager;
@@ -158,7 +159,7 @@ public class SlimeWorldModule extends PluginModule {
             Class<?> clazz = Class.forName(className);
 
             for (Constructor<?> constructor : clazz.getConstructors()) {
-                if (constructor.getParameterCount() == 2 && (constructor.getParameterTypes()[0].equals(SuperiorSkyblock.class) && constructor.getParameterTypes()[1].equals(String.class))) {
+                if (constructor.getParameterCount() == 2 && (constructor.getParameterTypes()[0].equals(SuperiorSkyblock.class) && constructor.getParameterTypes()[1].equals(DataSourceParams.class))) {
                     return (ISlimeAdapter) constructor.newInstance(this.plugin, settingsManager.dataSource);
                 }
             }

@@ -6,8 +6,28 @@
 ######################################################
 
 # The data source to use for the island worlds.
-# This should be identical to the valid values of SlimeWorldManager.
-data-source: 'file'
+# Choose one of the following types below.
+data-source:
+  type: 'file'
+  # The settings below are only relevant if you use ASP 3
+  # File related settings
+  file:
+    path: 'slime_worlds'
+  # MySQL related settings
+  mysql:
+    url: 'jdbc:mysql://{host}:{port}/{database}?autoReconnect=true&allowMultiQueries=true&useSSL={usessl}'
+    host: 127.0.0.1
+    port: 3306
+    username: ''
+    password: ''
+    database: ''
+    useSSL: false
+  # API related settings
+  api:
+    username: ''
+    token: ''
+    url: ''
+    ignore-ssl-certificate: false
 
 # The delay until unloading a world from its last access time, in minutes.
 # If you don't want to have any delay, set it to 0 or below.

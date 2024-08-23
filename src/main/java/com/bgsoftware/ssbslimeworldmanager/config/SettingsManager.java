@@ -2,12 +2,13 @@ package com.bgsoftware.ssbslimeworldmanager.config;
 
 import com.bgsoftware.common.config.CommentedConfiguration;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
+import com.bgsoftware.ssbslimeworldmanager.api.DataSourceParams;
 
 import java.io.File;
 
 public class SettingsManager {
 
-    public final String dataSource;
+    public final DataSourceParams dataSource;
     public final int unloadDelay;
 
     public SettingsManager(SlimeWorldModule module) {
@@ -17,6 +18,7 @@ public class SettingsManager {
             module.saveResource("config.yml");
 
         CommentedConfiguration config = CommentedConfiguration.loadConfiguration(file);
+        convertData(config);
 
         try {
             config.syncWithConfig(file, module.getResource("config.yml"));
@@ -24,8 +26,17 @@ public class SettingsManager {
             error.printStackTrace();
         }
 
-        this.dataSource = config.getString("data-source");
+        this.dataSource = DataSourceParams.parse(config.getConfigurationSection("data-source"));
         this.unloadDelay = config.getInt("unload-delay");
+    }
+
+    private static void convertData(CommentedConfiguration config) {
+        if (config.isString("data-source")) {
+            String dataSourceType = config.getString("data-source");
+            config.set("data-source", null);
+            config.set("data-source.type", dataSourceType);
+            config.set("data-source.file.path", "slime_worlds");
+        }
     }
 
 }
