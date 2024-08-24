@@ -10,6 +10,7 @@ public class SettingsManager {
 
     public final DataSourceParams dataSource;
     public final int unloadDelay;
+    public final boolean teleportBackToIsland;
 
     public SettingsManager(SlimeWorldModule module) {
         File file = new File(module.getModuleFolder(), "config.yml");
@@ -28,6 +29,7 @@ public class SettingsManager {
 
         this.dataSource = DataSourceParams.parse(config.getConfigurationSection("data-source"));
         this.unloadDelay = config.getInt("unload-delay");
+        this.teleportBackToIsland = config.getBoolean("teleport-back-to-island", true);
     }
 
     private static void convertData(CommentedConfiguration config) {

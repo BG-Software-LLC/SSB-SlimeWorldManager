@@ -7,6 +7,7 @@ import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import com.bgsoftware.superiorskyblock.api.wrappers.SuperiorPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -54,11 +55,7 @@ public class IslandsListener implements Listener {
         SuperiorPlayer superiorPlayer = module.getPlugin().getPlayers().getSuperiorPlayer(event.getPlayer());
         Island island = superiorPlayer.getIsland();
         if (island != null) {
-            Location defaultWorldTeleportLocation = event.getPlayer().getLocation();
-            defaultWorldTeleportLocation.setWorld(Bukkit.getWorlds().get(0));
-            // We check if the player was teleported to the default world.
-            // If so, we teleport them to their island again.
-            boolean teleportToIsland = defaultWorldTeleportLocation.equals(superiorPlayer.getLocation());
+            boolean teleportToIsland = checkIfTeleportToIsland(event.getPlayer());
 
             AtomicBoolean teleportedToIsland = new AtomicBoolean(false);
 
@@ -85,6 +82,16 @@ public class IslandsListener implements Listener {
             return false;
 
         return island.isDimensionEnabled(dimension);
+    }
+
+    private boolean checkIfTeleportToIsland(Player player) {
+        if (!module.getSettings().teleportBackToIsland)
+            return false;
+
+        // We check if the player was teleported to the default world.
+        // If so, we teleport them to their island again.
+        Location defaultWorldTeleportLocation = player.getLocation();
+        return defaultWorldTeleportLocation.getWorld().equals(Bukkit.getWorlds().get(0));
     }
 
 }
