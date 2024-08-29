@@ -4,6 +4,7 @@ public enum DataSourceType {
 
     FILE,
     MYSQL,
+    MONGODB,
     API
 
 }

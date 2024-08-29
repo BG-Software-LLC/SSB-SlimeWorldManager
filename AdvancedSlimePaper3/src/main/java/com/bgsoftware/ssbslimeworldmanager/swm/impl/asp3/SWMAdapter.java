@@ -51,6 +51,15 @@ public class SWMAdapter implements ISlimeAdapter {
                     throw new SWMAdapterLoadException("Failed to connect to MySQL", error);
                 }
             }
+            case MONGODB: {
+                try {
+                    DataSourceParams.MongoDB mongoDBParams = (DataSourceParams.MongoDB) dataSourceParams;
+                    return new MongoLoader(mongoDBParams.database, mongoDBParams.collection, mongoDBParams.username, mongoDBParams.password,
+                            mongoDBParams.auth, mongoDBParams.host, mongoDBParams.port, mongoDBParams.url);
+                } catch (Throwable error) {
+                    throw new SWMAdapterLoadException("Failed to connect to MongoDB", error);
+                }
+            }
             case API: {
                 try {
                     DataSourceParams.API apiParams = (DataSourceParams.API) dataSourceParams;
