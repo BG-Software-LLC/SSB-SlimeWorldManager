@@ -13,6 +13,6 @@ repositories {
 dependencies {
     compileOnly 'com.infernalsuite:AdvancedSlimePaper:1.21-R0.1'
     compileOnly 'org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT'
-    implementation 'org.mongodb:mongodb-driver-sync:5.1.3'
+    compileOnly 'org.mongodb:mongodb-driver-sync:5.1.3'
     compileOnly project(":API")
 }
