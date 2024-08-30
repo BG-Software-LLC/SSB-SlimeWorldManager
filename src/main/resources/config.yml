@@ -22,6 +22,16 @@ data-source:
     password: ''
     database: ''
     useSSL: false
+  # MongoDB related settings
+  mongodb:
+    url: 'mongodb://{username}:{password}@{host}:{port}/'
+    host: 127.0.0.1
+    port: 3306
+    auth: ''
+    username: ''
+    password: ''
+    database: ''
+    collection: ''
   # API related settings
   api:
     username: ''

@@ -16,6 +16,8 @@ public interface DataSourceParams {
                 return new API(section.getConfigurationSection("api"));
             case MYSQL:
                 return new MySQL(section.getConfigurationSection("mysql"));
+            case MONGODB:
+                return new MongoDB(section.getConfigurationSection("mongodb"));
             case FILE:
                 return new File(section.getConfigurationSection("file"));
         }
@@ -66,6 +68,34 @@ public interface DataSourceParams {
         @Override
         public DataSourceType getType() {
             return DataSourceType.MYSQL;
+        }
+    }
+
+    class MongoDB implements DataSourceParams {
+
+        public final String url;
+        public final String host;
+        public final int port;
+        public final String auth;
+        public final String username;
+        public final String password;
+        public final String database;
+        public final String collection;
+
+        private MongoDB(ConfigurationSection section) {
+            this.url = section.getString("url", "mongodb://{username}:{password}@{host}:{port}/");
+            this.host = section.getString("host", "127.0.0.1");
+            this.port = section.getInt("port", 3306);
+            this.auth = section.getString("auth", "");
+            this.username = section.getString("username", "");
+            this.password = section.getString("password", "");
+            this.database = section.getString("database", "");
+            this.collection = section.getString("collection", "");
+        }
+
+        @Override
+        public DataSourceType getType() {
+            return DataSourceType.MONGODB;
         }
     }
 
