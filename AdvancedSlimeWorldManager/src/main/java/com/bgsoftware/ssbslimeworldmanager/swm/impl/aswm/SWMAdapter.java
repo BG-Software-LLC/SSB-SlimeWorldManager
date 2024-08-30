@@ -35,7 +35,7 @@ public class SWMAdapter implements ISlimeAdapter {
         this.plugin = plugin;
         this.slimePlugin = (SlimePlugin) Bukkit.getPluginManager().getPlugin("SlimeWorldManager");
         Preconditions.checkState(this.slimePlugin != null, "SlimeWorldManager plugin does not exist");
-        String dataSourceType = dataSource.getType().name();
+        String dataSourceType = dataSource.getType().name().toLowerCase(Locale.ENGLISH);;
         this.slimeLoader = this.slimePlugin.getLoader(dataSourceType);
         Preconditions.checkState(this.slimeLoader != null, "Invalid data source: " + dataSourceType);
     }
