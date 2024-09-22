@@ -252,8 +252,13 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
     }
 
     private World generateWorld(ISlimeWorld slimeWorld) {
-        this.module.getSlimeAdapter().generateWorld(slimeWorld);
         World bukkitWorld = Bukkit.getWorld(slimeWorld.getName());
+        // Do not generate the load if it is already loaded somehow
+        if (bukkitWorld != null)
+            return bukkitWorld;
+
+        this.module.getSlimeAdapter().generateWorld(slimeWorld);
+        bukkitWorld = Bukkit.getWorld(slimeWorld.getName());
         Bukkit.getPluginManager().callEvent(new WorldLoadEvent(bukkitWorld));
         return bukkitWorld;
     }
