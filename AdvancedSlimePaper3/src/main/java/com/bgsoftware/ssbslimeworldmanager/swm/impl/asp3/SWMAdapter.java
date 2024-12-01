@@ -1,11 +1,13 @@
 package com.bgsoftware.ssbslimeworldmanager.swm.impl.asp3;
 
 import com.bgsoftware.ssbslimeworldmanager.api.DataSourceParams;
+import com.bgsoftware.ssbslimeworldmanager.api.EnumerateMap;
 import com.bgsoftware.ssbslimeworldmanager.api.ISlimeAdapter;
 import com.bgsoftware.ssbslimeworldmanager.api.ISlimeWorld;
 import com.bgsoftware.ssbslimeworldmanager.api.SWMAdapterLoadException;
 import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
+import com.bgsoftware.superiorskyblock.api.config.SettingsManager;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import com.google.common.base.Preconditions;
@@ -21,7 +23,6 @@ import com.infernalsuite.aswm.loaders.file.FileLoader;
 import com.infernalsuite.aswm.loaders.mongo.MongoLoader;
 import com.infernalsuite.aswm.loaders.mysql.MysqlLoader;
 import org.bukkit.Bukkit;
-import org.bukkit.World;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +32,9 @@ import java.util.logging.Level;
 
 public class SWMAdapter implements ISlimeAdapter {
 
+    private static final EnumerateMap<Dimension, SlimePropertyMap> PROPERTIES = new EnumerateMap<>();
+    private static final SlimePropertyMap EMPTY_MAP = new SlimePropertyMap();
+
     private final SuperiorSkyblock plugin;
 
     private final SlimeLoader slimeLoader;
@@ -38,6 +42,7 @@ public class SWMAdapter implements ISlimeAdapter {
     public SWMAdapter(SuperiorSkyblock plugin, DataSourceParams dataSource) throws SWMAdapterLoadException {
         this.plugin = plugin;
         this.slimeLoader = createSlimeLoader(dataSource);
+        loadDefaultProperties();
     }
 
     private static SlimeLoader createSlimeLoader(DataSourceParams dataSourceParams) throws SWMAdapterLoadException {
@@ -88,23 +93,17 @@ public class SWMAdapter implements ISlimeAdapter {
     }
 
     @Override
-    public ISlimeWorld createOrLoadWorld(String worldName, World.Environment environment) {
+    public ISlimeWorld createOrLoadWorld(String worldName, Dimension dimension) {
         ISlimeWorld slimeWorld = SlimeUtils.getSlimeWorld(worldName);
 
         if (slimeWorld == null) {
-            SlimePropertyMap properties = new SlimePropertyMap();
-
             try {
                 if (this.slimeLoader.worldExists(worldName)) {
                     slimeWorld = new SWMSlimeWorld(AdvancedSlimePaperAPI.instance().readWorld(
-                            this.slimeLoader, worldName, false, properties));
+                            this.slimeLoader, worldName, false, EMPTY_MAP));
                 } else {
-                    // set the default island properties accordingly
-                    properties.setValue(SlimeProperties.DIFFICULTY, plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
-                    properties.setValue(SlimeProperties.ENVIRONMENT, environment.name().toLowerCase(Locale.ENGLISH));
-
                     slimeWorld = new SWMSlimeWorld(AdvancedSlimePaperAPI.instance().createEmptyWorld(
-                            worldName, false, properties, this.slimeLoader));
+                            worldName, false, getPropertyMap(dimension), this.slimeLoader));
                 }
 
                 SlimeUtils.setSlimeWorld(worldName, slimeWorld);
@@ -141,6 +140,29 @@ public class SWMAdapter implements ISlimeAdapter {
         }
 
         return false;
+    }
+
+    private void loadDefaultProperties() {
+        for (Dimension dimension : Dimension.values())
+            getPropertyMap(dimension);
+    }
+
+    private SlimePropertyMap getPropertyMap(Dimension dimension) {
+        return PROPERTIES.computeIfAbsent(dimension, d -> {
+            // New dimension, let's set its default properties.
+            SlimePropertyMap properties = new SlimePropertyMap();
+            properties.setValue(SlimeProperties.DIFFICULTY,
+                    plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
+            properties.setValue(SlimeProperties.ENVIRONMENT,
+                    dimension.getEnvironment().name().toLowerCase(Locale.ENGLISH));
+            SettingsManager.Worlds.DimensionConfig dimensionConfig = plugin.getSettings().getWorlds().getDimensionConfig(dimension);
+            if (dimensionConfig != null) {
+                properties.setValue(SlimeProperties.DEFAULT_BIOME, dimensionConfig.getBiome().toLowerCase(Locale.ENGLISH));
+                if (dimensionConfig instanceof SettingsManager.Worlds.End end && end.isDragonFight())
+                    properties.setValue(SlimeProperties.DRAGON_BATTLE, true);
+            }
+            return properties;
+        });
     }
 
 }

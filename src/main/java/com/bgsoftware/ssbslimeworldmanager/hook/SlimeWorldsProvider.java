@@ -187,7 +187,7 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     private World getSlimeWorldAsBukkitLocked(String worldName, Dimension dimension, @Nullable PendingWorldLoadRequest pendingRequest) {
         // We load the world synchronized as we need it right now.
-        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, dimension.getEnvironment());
+        ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, dimension);
         World bukkitWorld = generateWorld(slimeWorld);
 
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
@@ -227,7 +227,7 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
                     return;
 
                 // Loading the world asynchronous.
-                slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, dimension.getEnvironment());
+                slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, dimension);
             }
 
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {

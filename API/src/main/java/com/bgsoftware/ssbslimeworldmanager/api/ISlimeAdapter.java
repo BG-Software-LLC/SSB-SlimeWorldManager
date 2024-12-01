@@ -11,7 +11,7 @@ public interface ISlimeAdapter {
 
     List<String> getSavedWorlds() throws IOException;
 
-    ISlimeWorld createOrLoadWorld(String worldName, World.Environment environment);
+    ISlimeWorld createOrLoadWorld(String worldName, Dimension dimension);
 
     void generateWorld(ISlimeWorld slimeWorld);
 
