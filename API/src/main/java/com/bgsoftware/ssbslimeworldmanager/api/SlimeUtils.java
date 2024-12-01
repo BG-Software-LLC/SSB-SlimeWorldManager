@@ -70,21 +70,18 @@ public class SlimeUtils {
     }
 
     public static void saveAndUnloadWorld(String worldName) {
-        World world = Bukkit.getWorld(worldName);
-        if (world == null) return;
-
-        world.save();
-        Bukkit.unloadWorld(world, false);
-
-        islandWorlds.remove(worldName);
+        saveAndUnloadWorld(Bukkit.getWorld(worldName));
     }
 
-    public static void saveAndUnloadWorld(World world) {
-        if (world == null) return;
+    public static void saveAndUnloadWorld(@Nullable World world) {
+        if (world == null)
+            return;
 
         world.save();
         Bukkit.unloadWorld(world, false);
+    }
 
+    public static void notifyUnloadWorld(World world) {
         islandWorlds.remove(world.getName());
     }
 

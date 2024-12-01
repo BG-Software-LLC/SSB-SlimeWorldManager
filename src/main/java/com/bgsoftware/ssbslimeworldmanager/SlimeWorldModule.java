@@ -7,6 +7,7 @@ import com.bgsoftware.ssbslimeworldmanager.config.SettingsManager;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsCreationAlgorithm;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsProvider;
 import com.bgsoftware.ssbslimeworldmanager.listeners.IslandsListener;
+import com.bgsoftware.ssbslimeworldmanager.listeners.WorldsListener;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.commands.SuperiorCommand;
 import com.bgsoftware.superiorskyblock.api.modules.ModuleLoadTime;
@@ -81,7 +82,7 @@ public class SlimeWorldModule extends PluginModule {
 
     @Override
     public Listener[] getModuleListeners(SuperiorSkyblock plugin) {
-        return new Listener[]{new IslandsListener(this)};
+        return new Listener[]{new IslandsListener(this), new WorldsListener()};
     }
 
     @Nullable
