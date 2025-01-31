@@ -8,6 +8,7 @@ import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsCreationAlgorithm;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsProvider;
 import com.bgsoftware.ssbslimeworldmanager.listeners.IslandsListener;
 import com.bgsoftware.ssbslimeworldmanager.listeners.WorldsListener;
+import com.bgsoftware.ssbslimeworldmanager.providers.ProvidersManager;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.commands.SuperiorCommand;
 import com.bgsoftware.superiorskyblock.api.modules.ModuleLoadTime;
@@ -28,6 +29,7 @@ public class SlimeWorldModule extends PluginModule {
 
     private SuperiorSkyblock plugin;
     private SettingsManager settingsManager;
+    private ProvidersManager providersManager;
 
     @Nullable
     private ISlimeAdapter slimeAdapter;
@@ -43,6 +45,7 @@ public class SlimeWorldModule extends PluginModule {
         this.plugin = plugin;
 
         this.settingsManager = new SettingsManager(this);
+        this.providersManager = new ProvidersManager(this);
 
         this.slimeAdapter = loadAdapter();
         if (this.slimeAdapter == null)
@@ -51,6 +54,8 @@ public class SlimeWorldModule extends PluginModule {
         loadWorldsProvider();
 
         loadCreationAlgorithm();
+
+        this.providersManager.loadHooks();
     }
 
     @Override
@@ -104,6 +109,10 @@ public class SlimeWorldModule extends PluginModule {
 
     public SettingsManager getSettings() {
         return settingsManager;
+    }
+
+    public ProvidersManager getProviders() {
+        return providersManager;
     }
 
     public ISlimeAdapter getSlimeAdapter() {

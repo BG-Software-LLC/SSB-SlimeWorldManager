@@ -67,6 +67,7 @@ dependencies {
     implementation project(":API")
 
     compileOnly 'com.bgsoftware.common.config:CommentedConfiguration:1.0.3'
+    compileOnly 'com.bgsoftware:WildLoadersAPI:2024.4'
     compileOnly "org.spigotmc:v1_8_R3-Taco:latest"
 }
 

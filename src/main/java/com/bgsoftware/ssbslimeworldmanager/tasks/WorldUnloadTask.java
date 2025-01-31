@@ -63,7 +63,7 @@ public class WorldUnloadTask extends BukkitRunnable {
             return;
         }
 
-        if (!world.getPlayers().isEmpty()) {
+        if (!world.getPlayers().isEmpty() || module.getProviders().shouldKeepWorldLoaded(world)) {
             updateTimeUntilNextUnload();
             return;
         }
