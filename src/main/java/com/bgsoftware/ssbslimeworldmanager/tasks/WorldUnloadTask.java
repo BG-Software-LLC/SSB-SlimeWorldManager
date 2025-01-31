@@ -5,22 +5,17 @@ import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
 import com.google.common.base.Preconditions;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class WorldUnloadTask extends BukkitRunnable {
+public class WorldUnloadTask {
 
     private static final long MINUTE_IN_TICKS = 1200L;
 
     private static final WorldUnloadTask EMPTY_TASK = new WorldUnloadTask(null) {
-        @Override
-        public void run() {
-            // If this will ever get called, it should do nothing and cancel itself.
-            cancel();
-        }
-
         @Override
         public void updateTimeUntilNextUnload() {
             // Do nothing.
@@ -33,7 +28,8 @@ public class WorldUnloadTask extends BukkitRunnable {
 
     private final String worldName;
 
-    private long timeUntilNextUnload;
+    @Nullable
+    private BukkitTask currentUnloadTask;
 
     private WorldUnloadTask(String worldName) {
         Preconditions.checkState(worldName == null || module.getSettings().unloadDelay > 0,
@@ -42,39 +38,37 @@ public class WorldUnloadTask extends BukkitRunnable {
         this.worldName = worldName;
 
         if (worldName != null && module.getSettings().unloadDelay > 0) {
-            runTaskTimer(module.getPlugin(), MINUTE_IN_TICKS, module.getSettings().unloadDelay * MINUTE_IN_TICKS);
             updateTimeUntilNextUnload();
         }
     }
 
     public void updateTimeUntilNextUnload() {
-        this.timeUntilNextUnload = module.getSettings().unloadDelay;
+        if (this.currentUnloadTask != null)
+            this.currentUnloadTask.cancel();
+
+        this.currentUnloadTask = Bukkit.getScheduler().runTaskLater(
+                module.getPlugin(), this::unloadTask, module.getSettings().unloadDelay * MINUTE_IN_TICKS);
     }
 
-    @Override
-    public void run() {
-        if (timeUntilNextUnload-- > 0)
-            return;
+    private void unloadTask() {
+        this.currentUnloadTask = null;
 
         final World world = Bukkit.getWorld(worldName);
 
-        if (world == null) {
-            cancel();
-            return;
+        if (world != null) {
+            if (!world.getPlayers().isEmpty() || module.getProviders().shouldKeepWorldLoaded(world)) {
+                updateTimeUntilNextUnload();
+                return;
+            }
+
+            SlimeUtils.saveAndUnloadWorld(world);
         }
 
-        if (!world.getPlayers().isEmpty() || module.getProviders().shouldKeepWorldLoaded(world)) {
-            updateTimeUntilNextUnload();
-            return;
-        }
-
-        SlimeUtils.saveAndUnloadWorld(world);
+        finishUnloadTask();
     }
 
-    @Override
-    public synchronized void cancel() throws IllegalStateException {
+    private void finishUnloadTask() {
         worldUnloadTasks.remove(this.worldName);
-        super.cancel();
     }
 
     public static WorldUnloadTask getTask(String worldName) {
