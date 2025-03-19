@@ -134,21 +134,16 @@ public class SlimeWorldModule extends PluginModule {
     private ISlimeAdapter loadAdapter() {
         ISlimeAdapter slimeAdapter;
 
-        try {
-            Class.forName("com.infernalsuite.aswm.api.AdvancedSlimePaperAPI");
+        if (isClassLoaded("com.infernalsuite.asp.api.AdvancedSlimePaperAPI")) {
+            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp4.SWMAdapter");
+        } else if (isClassLoaded("com.infernalsuite.aswm.api.AdvancedSlimePaperAPI")) {
             slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp3.SWMAdapter");
-        } catch (Throwable ignored) {
-            try {
-                Class.forName("com.infernalsuite.aswm.api.SlimePlugin");
-                slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp.SWMAdapter");
-            } catch (Throwable ignored2) {
-                try {
-                    Class.forName("com.grinderwolf.swm.nms.world.AbstractSlimeNMSWorld");
-                    slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm.SWMAdapter");
-                } catch (Throwable ignored3) {
-                    slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
-                }
-            }
+        } else if (isClassLoaded("com.infernalsuite.aswm.api.SlimePlugin")) {
+            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.asp.SWMAdapter");
+        } else if (isClassLoaded("com.grinderwolf.swm.nms.world.AbstractSlimeNMSWorld")) {
+            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.aswm.SWMAdapter");
+        } else {
+            slimeAdapter = createAdapterInstance("com.bgsoftware.ssbslimeworldmanager.swm.impl.swm.SWMAdapter");
         }
 
         return slimeAdapter;
@@ -178,6 +173,15 @@ public class SlimeWorldModule extends PluginModule {
         } catch (Exception exception) {
             exception.printStackTrace();
             return null;
+        }
+    }
+
+    private static boolean isClassLoaded(String clazz) {
+        try {
+            Class.forName(clazz);
+            return true;
+        } catch (ClassNotFoundException error) {
+            return false;
         }
     }
 

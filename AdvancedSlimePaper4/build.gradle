@@ -1,0 +1,20 @@
+group 'AdvancedSlimePaper4'
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    }
+}
+
+repositories {
+    maven { url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    maven { url 'https://repo.infernalsuite.com/repository/maven-snapshots/' }
+    maven { url 'https://repo.rapture.pw/repository/maven-releases/' }
+}
+
+dependencies {
+    compileOnly 'com.infernalsuite.asp:api:4.0.0-SNAPSHOT'
+    implementation 'com.infernalsuite.asp:loaders:4.0.0-SNAPSHOT'
+    compileOnly 'org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT'
+    compileOnly project(":API")
+}
