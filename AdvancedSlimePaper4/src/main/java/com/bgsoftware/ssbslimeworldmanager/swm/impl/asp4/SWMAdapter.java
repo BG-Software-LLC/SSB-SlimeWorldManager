@@ -18,6 +18,7 @@ import com.infernalsuite.asp.api.exceptions.UnknownWorldException;
 import com.infernalsuite.asp.api.loaders.SlimeLoader;
 import com.infernalsuite.asp.api.world.properties.SlimeProperties;
 import com.infernalsuite.asp.api.world.properties.SlimePropertyMap;
+import com.infernalsuite.asp.api.world.properties.type.SlimePropertyBoolean;
 import com.infernalsuite.asp.loaders.api.APILoader;
 import com.infernalsuite.asp.loaders.file.FileLoader;
 import com.infernalsuite.asp.loaders.mongo.MongoLoader;
@@ -34,6 +35,10 @@ public class SWMAdapter implements ISlimeAdapter {
 
     private static final EnumerateMap<Dimension, SlimePropertyMap> PROPERTIES = new EnumerateMap<>();
     private static final SlimePropertyMap EMPTY_MAP = new SlimePropertyMap();
+
+    private static final SlimePropertyBoolean SAVE_POI_PROPERTY = SlimePropertyBoolean.create("savePOI", false);
+    private static final SlimePropertyBoolean SAVE_BLOCK_TICKS_PROPERTY = SlimePropertyBoolean.create("saveBlockTicks", false);
+    private static final SlimePropertyBoolean SAVE_FLUID_TICKS_PROPERTY = SlimePropertyBoolean.create("saveFluidTicks", false);
 
     private final SuperiorSkyblock plugin;
 
@@ -155,6 +160,9 @@ public class SWMAdapter implements ISlimeAdapter {
                     plugin.getSettings().getWorlds().getDifficulty().toLowerCase(Locale.ENGLISH));
             properties.setValue(SlimeProperties.ENVIRONMENT,
                     dimension.getEnvironment().name().toLowerCase(Locale.ENGLISH));
+            properties.setValue(SAVE_POI_PROPERTY, true);
+            properties.setValue(SAVE_BLOCK_TICKS_PROPERTY, true);
+            properties.setValue(SAVE_FLUID_TICKS_PROPERTY, true);
             SettingsManager.Worlds.DimensionConfig dimensionConfig = plugin.getSettings().getWorlds().getDimensionConfig(dimension);
             if (dimensionConfig != null) {
                 properties.setValue(SlimeProperties.DEFAULT_BIOME, dimensionConfig.getBiome().toLowerCase(Locale.ENGLISH));
