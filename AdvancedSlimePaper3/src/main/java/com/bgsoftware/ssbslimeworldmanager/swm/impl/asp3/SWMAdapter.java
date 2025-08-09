@@ -33,7 +33,6 @@ import java.util.logging.Level;
 public class SWMAdapter implements ISlimeAdapter {
 
     private static final EnumerateMap<Dimension, SlimePropertyMap> PROPERTIES = new EnumerateMap<>();
-    private static final SlimePropertyMap EMPTY_MAP = new SlimePropertyMap();
 
     private final SuperiorSkyblock plugin;
 
@@ -100,7 +99,7 @@ public class SWMAdapter implements ISlimeAdapter {
             try {
                 if (this.slimeLoader.worldExists(worldName)) {
                     slimeWorld = new SWMSlimeWorld(AdvancedSlimePaperAPI.instance().readWorld(
-                            this.slimeLoader, worldName, false, EMPTY_MAP));
+                            this.slimeLoader, worldName, false, getPropertyMap(dimension)));
                 } else {
                     slimeWorld = new SWMSlimeWorld(AdvancedSlimePaperAPI.instance().createEmptyWorld(
                             worldName, false, getPropertyMap(dimension), this.slimeLoader));
