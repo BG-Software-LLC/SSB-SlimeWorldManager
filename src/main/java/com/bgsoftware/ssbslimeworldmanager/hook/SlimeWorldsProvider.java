@@ -10,6 +10,7 @@ import com.bgsoftware.superiorskyblock.api.hooks.LazyWorldsProvider;
 import com.bgsoftware.superiorskyblock.api.island.Island;
 import com.bgsoftware.superiorskyblock.api.world.Dimension;
 import com.bgsoftware.superiorskyblock.api.world.WorldInfo;
+import com.bgsoftware.superiorskyblock.api.wrappers.BlockPosition;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -61,6 +62,14 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
 
     @Override
     public Location getNextLocation(Location previousLocation, int islandsHeight, int maxIslandSize, UUID islandOwner, UUID islandUUID) {
+        return computeNextLocationInternal(islandUUID, islandsHeight);
+    }
+
+    public Location getNextLocation(BlockPosition previousPosition, int islandsHeight, int maxIslandSize, UUID islandOwner, UUID islandUUID) {
+        return computeNextLocationInternal(islandUUID, islandsHeight);
+    }
+
+    private Location computeNextLocationInternal(UUID islandUUID, int islandsHeight) {
         // The world should be loaded by now.
         World islandWorld = getSlimeWorldAsBukkit(islandUUID,
                 module.getPlugin().getSettings().getWorlds().getDefaultWorldDimension());
