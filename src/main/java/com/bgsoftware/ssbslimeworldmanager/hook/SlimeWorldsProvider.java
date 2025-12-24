@@ -152,7 +152,8 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
         Dimension dimension = SlimeUtils.getDimension(worldName);
         if (dimension == null)
             return null;
-        return WorldInfo.of(worldName, dimension);
+        String expectedWorldName = SlimeUtils.getWorldName(island.getUniqueId(), dimension);
+        return expectedWorldName.equals(worldName) ? WorldInfo.of(worldName, dimension) : null;
     }
 
     @Override
