@@ -12,3 +12,6 @@ build
 # Ignore output generated files
 target
 out
+
+# Ignore local dependency jars
+archive

@@ -52,6 +52,9 @@ public class IslandsListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlayerJoin(PlayerJoinEvent event) {
+        if (!module.getSettings().preloadIslandWorldsOnJoin)
+            return;
+
         SuperiorPlayer superiorPlayer = module.getPlugin().getPlayers().getSuperiorPlayer(event.getPlayer());
         Island island = superiorPlayer.getIsland();
         if (island != null) {
