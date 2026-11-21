@@ -1,22 +1,27 @@
 plugins {
     id 'java'
-    id 'io.github.goooler.shadow' version '8.1.7'
+    id 'com.gradleup.shadow' version '9.4.1'
     id 'maven-publish'
 }
 
 group 'SSB-SlimeWorldManager'
 version = "2026.1"
 
+// Read lazily so a new BUILD_NUMBER on every CI run does not invalidate the configuration cache.
+String baseVersion = version.toString()
+
 project.ext {
-    archiveFolder = file("archive/")
     targetFolder = file("target/")
-    buildVersion = System.getenv("BUILD_NUMBER") == null || Boolean.parseBoolean(System.getenv("STABLE_BUILD")) ?
-            version : version + "-b" + System.getenv("BUILD_NUMBER")
+    buildVersion = providers.environmentVariable("BUILD_NUMBER")
+            .zip(providers.environmentVariable("STABLE_BUILD").orElse("false")) { String buildNumber, String stableBuild ->
+                Boolean.parseBoolean(stableBuild) ? baseVersion : baseVersion + "-b" + buildNumber
+            }
+            .orElse(baseVersion)
 }
 
 allprojects {
     apply plugin: 'java'
-    apply plugin: 'io.github.goooler.shadow'
+    apply plugin: 'com.gradleup.shadow'
 
     java {
         toolchain {
@@ -36,13 +41,21 @@ allprojects {
         compileOnly "com.bgsoftware:SuperiorSkyblockAPI:2024.2"
     }
 
-    task checkDebug() {
-        Set<File> filesWithDebug = fileTree('src/main/java').filter { file ->
-            file.text.contains('Bukkit.broadcastMessage')
-        }.getFiles()
+    tasks.register('checkDebug') {
+        def sources = fileTree('src/main/java')
+        def marker = layout.buildDirectory.file('tmp/checkDebug/ok')
+        inputs.files(sources).withPathSensitivity(PathSensitivity.RELATIVE).withPropertyName('sources')
+        outputs.file(marker)
+        doLast {
+            Set<File> filesWithDebug = sources.filter { File file ->
+                file.text.contains('Bukkit.broadcastMessage')
+            }.getFiles()
 
-        if (!filesWithDebug.isEmpty())
-            throw new GradleException("Found debug messages: " + filesWithDebug)
+            if (!filesWithDebug.isEmpty())
+                throw new GradleException("Found debug messages: " + filesWithDebug)
+
+            marker.get().asFile.text = ''
+        }
     }
 
     build {
@@ -51,73 +64,74 @@ allprojects {
     }
 }
 
-subprojects {
-    shadowJar {
-        archiveFileName = "${project.name}.jar"
-        destinationDirectory = rootProject.archiveFolder
-    }
-}
-
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation fileTree(rootProject.archiveFolder.getAbsolutePath())
     implementation project(":API")
+
+    // Each world-manager adapter is bundled as its shaded jar, so the libraries it ships (e.g. the ASP loaders) come along.
+    // The module loads the adapters by reflection, so they stay off the compile classpath.
+    // AdvancedSlimePaper3 and AdvancedSlimePaper4 ship different versions of the same libraries (lettuce, netty, HikariCP...)
+    // and only the first copy of a file is kept, so adapters are added in reverse name order to let the newest one win.
+    subprojects.findAll { it.name != 'API' }.sort { a, b -> b.name <=> a.name }.each { sub ->
+        runtimeOnly files(sub.tasks.named('shadowJar').flatMap { it.archiveFile })
+    }
 
     compileOnly 'com.bgsoftware.common.config:CommentedConfiguration:1.0.3'
     compileOnly 'com.bgsoftware:WildLoadersAPI:2024.4'
     compileOnly "org.spigotmc:v1_8_R3-Taco:latest"
 }
 
-jar {
-    from {
-        for (File file : rootProject.archiveFolder.listFiles()) {
-            zipTree(file)
+processResources {
+    def pluginVersion = rootProject.buildVersion
+    inputs.property('pluginVersion', pluginVersion)
+    filesMatching('plugin.yml') {
+        filter { String line ->
+            line.replace('${project.version}', pluginVersion.get())
         }
     }
 }
 
-processResources {
-    outputs.upToDateWhen { false }
-    eachFile { details ->
-        if (details.name.contentEquals('plugin.yml')) {
-            filter { String line ->
-                line.replace('${project.version}', rootProject.buildVersion)
-            }
-        }
-    }
+// The shaded jar takes the unclassified name, so move the plain jar out of its way.
+jar {
+    archiveClassifier.set('plain')
 }
 
 shadowJar {
-    dependsOn(jar)
-
     relocate 'com.bgsoftware.common', 'com.bgsoftware.superiorskyblock.libs.com.bgsoftware.common'
 
-    archiveFileName = rootProject.name + "-" + rootProject.buildVersion + ".jar"
+    archiveClassifier.set('')
 
-    delete fileTree(rootProject.targetFolder.getAbsolutePath())
+    // Shadow 9 marks the jar Multi-Release when a bundled library is; the jar never had that flag, so keep it off.
+    addMultiReleaseAttribute.set(false)
 
     exclude '*exclude.jar'
-
-    destinationDirectory = rootProject.targetFolder
-    from sourceSets.getByName("main").output
-    configurations = [project.configurations.getByName("runtimeClasspath")]
 }
 
-clean {
-    delete rootProject.archiveFolder
+tasks.register('cleanTarget', Delete) {
+    delete rootProject.targetFolder
 }
 
-build {
-    dependsOn shadowJar
-    dependsOn clean
+tasks.register('collectArtifacts', Sync) {
+    group = 'build'
+
+    def rootName = rootProject.name
+    def pluginJarName = rootProject.buildVersion.map { rootName + "-" + it + ".jar" }
+    inputs.property('pluginJarName', pluginJarName)
+
+    from(tasks.named('shadowJar').flatMap { it.archiveFile }) {
+        rename { pluginJarName.get() }
+    }
+
+    into(rootProject.targetFolder)
 }
 
-publish.shouldRunAfter shadowJar
-shadowJar.shouldRunAfter build
-build.shouldRunAfter subprojects.build
+tasks.named('build') {
+    dependsOn(tasks.named('shadowJar'))
+}
 
-shadowJar.dependsOn subprojects.build
-compileJava.dependsOn childProjects.values().shadowJar
+tasks.named('shadowJar') {
+    finalizedBy('collectArtifacts')
+}
