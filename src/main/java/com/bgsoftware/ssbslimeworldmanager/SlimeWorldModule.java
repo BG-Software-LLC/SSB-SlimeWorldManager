@@ -7,19 +7,22 @@ import com.bgsoftware.ssbslimeworldmanager.config.SettingsManager;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsCreationAlgorithm;
 import com.bgsoftware.ssbslimeworldmanager.hook.SlimeWorldsProvider;
 import com.bgsoftware.ssbslimeworldmanager.listeners.IslandsListener;
+import com.bgsoftware.ssbslimeworldmanager.listeners.SaveTriggersListener;
 import com.bgsoftware.ssbslimeworldmanager.listeners.WorldsListener;
 import com.bgsoftware.ssbslimeworldmanager.providers.ProvidersManager;
+import com.bgsoftware.ssbslimeworldmanager.save.IslandWorldsSaveService;
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblock;
 import com.bgsoftware.superiorskyblock.api.commands.SuperiorCommand;
 import com.bgsoftware.superiorskyblock.api.modules.ModuleLoadTime;
 import com.bgsoftware.superiorskyblock.api.modules.PluginModule;
 import com.bgsoftware.superiorskyblock.api.world.algorithm.IslandCreationAlgorithm;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.event.Listener;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
@@ -34,6 +37,7 @@ public class SlimeWorldModule extends PluginModule {
     @Nullable
     private ISlimeAdapter slimeAdapter;
     private SlimeWorldsProvider slimeWorldsProvider;
+    private IslandWorldsSaveService saveService;
 
     public SlimeWorldModule() {
         super("SlimeWorldIslands", "Ome_R");
@@ -55,6 +59,9 @@ public class SlimeWorldModule extends PluginModule {
 
         loadCreationAlgorithm();
 
+        this.saveService = new IslandWorldsSaveService(this);
+        this.saveService.start();
+
         this.providersManager.loadHooks();
     }
 
@@ -65,29 +72,28 @@ public class SlimeWorldModule extends PluginModule {
 
     @Override
     public void onDisable(SuperiorSkyblock plugin) {
+        if (this.saveService != null)
+            this.saveService.stop();
+
         if (slimeAdapter == null)
             return;
 
-        List<String> worlds;
-
-        try {
-            worlds = slimeAdapter.getSavedWorlds();
-        } catch (IOException error) {
-            error.printStackTrace();
-            return;
+        // Save all the islands when the server shuts down.
+        // We iterate the loaded worlds instead of the saved ones, so islands that were never
+        // written to the data-source before are saved as well.
+        List<String> loadedIslandWorlds = new LinkedList<>();
+        for (World world : Bukkit.getWorlds()) {
+            if (SlimeUtils.isIslandsWorld(world.getName()) || SlimeUtils.isIslandWorldName(world.getName()))
+                loadedIslandWorlds.add(world.getName());
         }
 
-        // Save all the islands when the server shuts down
-        for (String worldName : worlds) {
-            if (SlimeUtils.isIslandWorldName(worldName) && Bukkit.getWorld(worldName) != null) {
-                SlimeUtils.saveAndUnloadWorld(worldName);
-            }
-        }
+        for (String worldName : loadedIslandWorlds)
+            SlimeUtils.saveAndUnloadWorld(worldName);
     }
 
     @Override
     public Listener[] getModuleListeners(SuperiorSkyblock plugin) {
-        return new Listener[]{new IslandsListener(this), new WorldsListener()};
+        return new Listener[]{new IslandsListener(this), new WorldsListener(this), new SaveTriggersListener(this)};
     }
 
     @Nullable
@@ -121,6 +127,10 @@ public class SlimeWorldModule extends PluginModule {
 
     public SlimeWorldsProvider getSlimeWorldsProvider() {
         return slimeWorldsProvider;
+    }
+
+    public IslandWorldsSaveService getSaveService() {
+        return saveService;
     }
 
     public SuperiorSkyblock getPlugin() {

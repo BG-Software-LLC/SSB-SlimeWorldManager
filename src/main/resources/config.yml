@@ -47,3 +47,44 @@ unload-delay: 10
 # the world of the island is not loaded. When set to false, players will be
 # teleported to their spawn location instead.
 teleport-back-to-island: true
+
+# Whether the worlds of the island of a player should be loaded when they join the server.
+#
+# Turn this OFF on a network that runs SSBProxyBridge: there, the server a player joins is not
+# necessarily the server that hosts their island, and loading the world here would both waste
+# memory and take the lock of the world away from the server that is supposed to host it.
+preload-island-worlds-on-join: true
+
+# Settings related to saving island worlds while they are still loaded.
+#
+# An island world is only written to the data-source when it is unloaded, or when the server is
+# shut down gracefully. This means that if the server crashes, every loaded island is reverted
+# back to the state it had in its last save. Auto-saving closes that window.
+auto-save:
+  # Whether island worlds should be saved automatically.
+  # When disabled, islands are only saved on unload and on a graceful shutdown.
+  enabled: true
+  # The interval between two automatic saves of a loaded island world, in seconds.
+  # Set to 0 to disable interval-based saving; the triggers below will still work.
+  interval: 300
+  # The minimum amount of time that has to pass between two saves of the same island world, in seconds.
+  # A save that is requested before this delay has passed is not dropped - it is delayed until the
+  # delay has passed. This is what keeps a burst of triggers from turning into a burst of saves.
+  min-delay: 60
+  # The maximum amount of island worlds that can be saved in a single cycle (a cycle is one second).
+  # Increasing this makes saves happen sooner, at the cost of more work in a single tick.
+  saves-per-cycle: 1
+  # Events that request a save of an island world.
+  # All of the triggers respect the `min-delay` setting above, so enabling all of them cannot
+  # cause more saves than one every `min-delay` seconds per island.
+  triggers:
+    # A player walked out of the area of the island.
+    island-leave: true
+    # The last player of the island's world left it (changed world, teleported away or disconnected).
+    world-empty: true
+    # An upgrade was purchased for the island.
+    island-upgrade: true
+    # A schematic was pasted into the island (island creation, /is regen, ...).
+    schematic-paste: true
+    # The biome of the island was changed.
+    biome-change: false

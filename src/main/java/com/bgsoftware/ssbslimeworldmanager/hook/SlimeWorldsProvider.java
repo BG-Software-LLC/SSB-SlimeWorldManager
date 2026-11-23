@@ -3,6 +3,7 @@ package com.bgsoftware.ssbslimeworldmanager.hook;
 import com.bgsoftware.ssbslimeworldmanager.SlimeWorldModule;
 import com.bgsoftware.ssbslimeworldmanager.api.ISlimeWorld;
 import com.bgsoftware.ssbslimeworldmanager.api.SlimeUtils;
+import com.bgsoftware.ssbslimeworldmanager.api.SlimeWorldLoadException;
 import com.bgsoftware.ssbslimeworldmanager.tasks.WorldUnloadTask;
 import com.bgsoftware.ssbslimeworldmanager.utils.Dimensions;
 import com.bgsoftware.superiorskyblock.api.config.SettingsManager;
@@ -198,6 +199,14 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
     private World getSlimeWorldAsBukkitLocked(String worldName, Dimension dimension, @Nullable PendingWorldLoadRequest pendingRequest) {
         // We load the world synchronized as we need it right now.
         ISlimeWorld slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, dimension);
+
+        if (slimeWorld == null) {
+            SlimeWorldLoadException error = new SlimeWorldLoadException(worldName);
+            if (pendingRequest != null)
+                pendingRequest.completeExceptionally(error);
+            throw error;
+        }
+
         World bukkitWorld = generateWorld(slimeWorld);
 
         WorldUnloadTask.getTask(slimeWorld.getName()).updateTimeUntilNextUnload();
@@ -240,15 +249,30 @@ public class SlimeWorldsProvider implements LazyWorldsProvider {
                 slimeWorld = this.module.getSlimeAdapter().createOrLoadWorld(worldName, dimension);
             }
 
+            if (slimeWorld == null) {
+                // The world could not be loaded - most likely it is still locked by another server.
+                // We must complete the request, otherwise every caller waiting on it hangs forever.
+                pendingWorldRequests.remove(worldName);
+                result.completeExceptionally(new SlimeWorldLoadException(worldName));
+                return;
+            }
+
             Bukkit.getScheduler().runTask(module.getPlugin(), () -> {
                 World bukkitWorld;
-                synchronized (result.mutex) {
-                    if (result.isStopped)
-                        return;
+                try {
+                    synchronized (result.mutex) {
+                        if (result.isStopped)
+                            return;
 
-                    // Generating the world synchronized
-                    bukkitWorld = generateWorld(slimeWorld);
+                        // Generating the world synchronized
+                        bukkitWorld = generateWorld(slimeWorld);
+                    }
+                } catch (Throwable error) {
+                    pendingWorldRequests.remove(worldName);
+                    result.completeExceptionally(error);
+                    return;
                 }
+
                 pendingWorldRequests.remove(worldName);
 
                 islandWorldsToDimensions.put(bukkitWorld.getUID(), dimension);
